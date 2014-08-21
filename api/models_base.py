@@ -6,8 +6,10 @@ from django.db.models.base import *
 
 from .logger import *
 from .django_ext import *
+from api.algorithms import *
 
 import datetime
+import json
 
 
 # Create your models here.
@@ -31,12 +33,11 @@ class Ontology(models.Model):
 
 
 class Category(models.Model):
-    ontology = 'unkown'
     name = models.CharField(max_length=255, default="unknown")
     alias = models.CharField(max_length=255, default="unknown")
     description = models.TextField(default="")
     obid = models.AutoField(primary_key=True)
-    Ontology = models.ForeignKey(Ontology, default=1)
+    ontology = models.ForeignKey(Ontology, default=1)
     xreflsid = models.CharField(max_length=255)
     createddate = models.DateTimeField(auto_now_add=True)
     createdby = models.CharField(max_length=255)
@@ -152,7 +153,6 @@ class Diet(Category):
 
 class Ob(models.Model):
     debug = False
-    ontology = 'Ob'
     obid = models.AutoField(primary_key=True)
     ontology = models.ForeignKey(Ontology, default=1)
     datasource = models.ForeignKey(DataSource, null=True)
@@ -193,48 +193,67 @@ class Unit(Category):
 
 class ObKV(models.Model):
     ob_id = models.IntegerField(db_index=True)
-    att_key = models.CharField(max_length=255)
-    att_value = models.CharField(max_length=255)
+    ontology = models.ForeignKey(Ontology)
+    key = models.CharField(max_length=255)
+    value = models.CharField(max_length=10240)
 
 
 def SaveKV(ob, key, value):
-    fact, created = ObKV.objects.get_or_create(
-        att_key=key,
-        ob=ob
-        )
-    if(created):
-        Logger.Warning(
-            "Ob.SaveFact: Created new fact for %s/%s" % ob.xreflsid, key
+    try:
+        ontology = ob.ontology
+        ob_id = ob.pk
+        enc = json.JSONEncoder()
+        fact, created = ObKV.objects.get_or_create(
+            key=key,
+            ontology=ontology,
+            ob_id=ob_id
             )
-    fact.value = value
-    fact.save()
-    return fact
-
-
-def GetKV(ob, key):
-    fact = ObKV.objects.get(ob=ob, att_key=key)
-    if(fact):
-        return fact.att_value
-    else:
-        Logger.Warning(
-            "Ob.GetFact: Key does not exist: {0}/{1}".format(
-                ob.xreflsid,
-                key)
-            )
+        fact.value = enc.encode(value)
+        fact.save()
+        return fact
+    except:
         return None
 
 
+def GetKV(ob, key):
+    try:
+        dec = json.JSONDecoder()
+        kv = ObKV.objects.get(
+            ob_id=ob.pk,
+            ontology=ob.ontology,
+            key=key
+            )
+        if(kv):
+            return dec.decode(kv.value)
+        else:
+            return None
+    except:
+        return None
+
+
+def decode(item):
+    dec = json.JSONDecoder()
+    item['value'] = dec.decode(item['value'])
+
+
 def GetKVs(ob):
-    kvs = ObKV.objects.filter(ob=ob)
-    if(kvs):
-        return kvs
-    else:
+    try:
+        kvs = list(ObKV.objects.filter(
+            ob_id=ob.pk,
+            ontology=ob.ontology
+            ).values())
+        for_each(kvs, decode)
+        if(kvs):
+            return kvs
+        else:
+            return None
+    except:
         return None
 
 
 def SetKVs(ob, values):
-    for item in values:
-        SaveKv(ob, item)
+    for key, value in list(values.items()):
+        SaveKV(ob.pk, key, value)
 
 
 class Gene(Category):

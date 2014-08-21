@@ -1,5 +1,4 @@
-from django.db import models
-
+from .models_base import *
 from .models_nunz import *
 from .models_seaf import *
 
