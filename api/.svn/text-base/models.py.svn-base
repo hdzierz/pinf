@@ -1,0 +1,7 @@
+from django.db import models
+
+from .models_base import *
+from .models_nunz import *
+from .modeks_seaf import *
+
+# Create your models here.
