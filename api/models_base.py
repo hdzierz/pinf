@@ -192,7 +192,7 @@ class Unit(Category):
 
 
 class ObKV(models.Model):
-    ob = models.ForeignKey(Ob)
+    ob_id = models.IntegerField(db_index=True)
     att_key = models.CharField(max_length=255)
     att_value = models.CharField(max_length=255)
 
