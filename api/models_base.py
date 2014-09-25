@@ -4,12 +4,15 @@ from django.dispatch import receiver
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.base import *
 
+from djorm_pgfulltext.models import SearchManager
+from djorm_pgfulltext.fields import VectorField
+
 from .logger import *
 from .django_ext import *
 from api.algorithms import *
 
 import datetime
-import json
+from jsonfield import JSONField
 
 
 # Create your models here.
@@ -19,22 +22,43 @@ class DataError(Exception):
 
 class Ontology(models.Model):
     ontology = 'unkown'
-    displayname = models.CharField(max_length=2048)
-    uri = models.CharField(max_length=2048)
-    displayurl = models.CharField(max_length=2048, default="")
+    name = models.CharField(max_length=2048)
+    displayurl = models.CharField(max_length=2048, default="", null=True)
     tablename = models.CharField(max_length=128)
-    namedinstances = models.BooleanField(default=False)
-    isop = models.BooleanField(default=False)
-    isvirtual = models.BooleanField(default=False)
-    isdynamic = models.BooleanField(default=False)
-    owner = models.CharField(max_length=128)
-    Ontologydescription = models.CharField(max_length=2048)
+    owner = models.CharField(max_length=128, null=True, default='core')
+    description = models.CharField(max_length=2048, null=True, default='')
     classname = models.CharField(max_length=128)
+
+    def __unicode__(self):
+        return self.name
+
+
+class DataSource(models.Model):
+    name = models.CharField(max_length=1024)
+    typ = models.CharField(null=True, max_length=256, default="None")
+    supplier = models.CharField(null=True, max_length=2048, default="None")
+    physicalsourceuri = models.CharField(null=True, max_length=2048)
+    supplieddate = models.DateField(auto_now_add=True)
+    comment = models.TextField(null=True, default="none")
+    numberoffiles = models.IntegerField(null=True, default=1)
+    uploadsourceuri = models.CharField(max_length=2048, null=True, default="")
+    search_index = VectorField()
+    objects = SearchManager(
+        fields=('name', 'typ'),
+        auto_update_search_field=True
+    )
+
+    def GetName(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.name
 
 
 class Category(models.Model):
     name = models.CharField(max_length=255, default="unknown")
     alias = models.CharField(max_length=255, default="unknown")
+    datasource = models.ForeignKey(DataSource, default=1)
     description = models.TextField(default="")
     obid = models.AutoField(primary_key=True)
     ontology = models.ForeignKey(Ontology, default=1)
@@ -45,15 +69,47 @@ class Category(models.Model):
     lastupdatedby = models.CharField(max_length=50)
     obkeywords = models.TextField()
     statuscode = models.IntegerField(default=1)
+    search_index = VectorField()
+    objects = SearchManager(
+        fields=('name', 'alias', 'description', 'obkeywords'),
+        auto_update_search_field=False
+    )
+
+    def InitOntology(self):
+        name = self.__class__.__name__
+        tname = 'api_' + name.lower()
+
+        obt = Ontology()
+        obt.displayname = name
+        obt.classname = name
+        obt.tablename = tname
+        obt.save()
 
     def GetName(self):
         return self.name
 
-    def IsCategory(self):
+    def IsOntology(self):
         return True
 
     class Meta:
         abstract = True
+
+
+def InitOntology(obj):
+    if isinstance(obj, str):
+        name = obj
+    elif isinstance(obj, object):
+        name = obj.__class__.__name__
+    else:
+        raise Exception('Setting the Ontology can only be done for objects or strings')
+
+    tname = 'api_' + name.lower()
+
+    Ontology.objects.get_or_create(
+        name=name,
+        classname=name,
+        tablename=tname
+    )
 
 
 class Species(Category):
@@ -130,21 +186,8 @@ class Study(Category):
             imp.Clean()
         return imp
 
-
-class DataSource(Category):
-    datasourcename = models.CharField(max_length=1024)
-    datasourcetype = models.CharField(max_length=256)
-    datasupplier = models.CharField(max_length=2048)
-    physicalsourceuri = models.CharField(max_length=2048)
-    datasupplieddate = models.DateField(auto_now_add=True)
-    datasourcecomment = models.TextField(default="none")
-    numberoffiles = models.IntegerField(default=1)
-    datasourcecontent = models.TextField(default="")
-    dynamiccontentmethod = models.CharField(max_length=256, default="")
-    uploadsourceuri = models.CharField(max_length=2048, default="")
-
-    def GetName(self):
-        return self.datasourcename
+    def __unicode__(self):
+        return self.name
 
 
 class Diet(Category):
@@ -152,8 +195,8 @@ class Diet(Category):
 
 
 class Ob(models.Model):
-    debug = False
-    obid = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    daughters = []
     ontology = models.ForeignKey(Ontology, default=1)
     datasource = models.ForeignKey(DataSource, null=True)
     study = models.ForeignKey(Study, null=True)
@@ -165,23 +208,19 @@ class Ob(models.Model):
     obkeywords = models.TextField()
     statuscode = models.IntegerField(default=1)
     group = models.CharField(max_length=1024, default="NA")
-    recordeddate = models.DateField()
+    recordeddate = models.DateField(auto_now_add=True)
 
-    def IsOb(self):
+    search_index = VectorField()
+    objects = SearchManager(
+        fields=('obkeywords'),
+        auto_update_search_field=False
+    )
+
+    def IsOntology(self):
         return True
 
     def GetName(self):
-        ans = []
-        frame = inspect.currentframe().f_back
-        tmp = dict(list(frame.f_globals.items()) + list(frame.f_locals.items()))
-        for k, var in list(tmp.items()):
-            if isinstance(var, self.__class__):
-                if hash(self) == hash(var):
-                    ans.append(k)
-        if(len(ans) >= 1):
-            return ans[0]
-        else:
-            return "unkown"
+        return self.study.name + '.' + self.name
 
     class Meta:
         abstract = True
@@ -192,35 +231,40 @@ class Unit(Category):
 
 
 class ObKV(models.Model):
-    ob_id = models.IntegerField(db_index=True)
-    ontology = models.ForeignKey(Ontology)
+    parent = None
+    datasource = models.ForeignKey(DataSource)
     key = models.CharField(max_length=255)
-    value = models.CharField(max_length=10240)
+    value = JSONField()
+
+    def __unicode__(self):
+        return self.key + ":" + str(self.value)
+
+    class Meta:
+        abstract = True
 
 
-def SaveKV(ob, key, value):
-    try:
-        ontology = ob.ontology
-        ob_id = ob.pk
-        enc = json.JSONEncoder()
-        fact, created = ObKV.objects.get_or_create(
-            key=key,
-            ontology=ontology,
-            ob_id=ob_id
-            )
-        fact.value = enc.encode(value)
-        fact.save()
-        return fact
-    except:
-        return None
+def SaveKV(ob, cls, key, value):
+    kv = eval(ob.daughters[0])
+    enc = json.JSONEncoder()
+    #kv = cls()
+    kv.parent = ob
+    kv.key = key
+    kv.value = enc.encode(value)
+    kv.save()
+    return kv
 
 
-def GetKV(ob, key):
+def SaveKVs(ob, cls, lst):
+    for key, value in list(lst.items()):
+        SaveKV(ob, cls, key, value)
+    return True
+
+
+def GetKV(ob, cls, key):
     try:
         dec = json.JSONDecoder()
-        kv = ObKV.objects.get(
-            ob_id=ob.pk,
-            ontology=ob.ontology,
+        kv = cls.objects.get(
+            parent=ob,
             key=key
             )
         if(kv):
@@ -236,24 +280,17 @@ def decode(item):
     item['value'] = dec.decode(item['value'])
 
 
-def GetKVs(ob):
+def GetKVs(ob, cls):
     try:
-        kvs = list(ObKV.objects.filter(
-            ob_id=ob.pk,
-            ontology=ob.ontology
+        kvs = list(cls.objects.filter(
+            parent=ob
             ).values())
-        for_each(kvs, decode)
         if(kvs):
-            return kvs
+            return for_each(kvs, decode)
         else:
             return None
     except:
         return None
-
-
-def SetKVs(ob, values):
-    for key, value in list(values.items()):
-        SaveKV(ob.pk, key, value)
 
 
 class Gene(Category):
@@ -285,7 +322,6 @@ class BioSubject(Category):
 
 class RawImport(Category):
     study = models.ForeignKey(Study)
-    datasource = models.ForeignKey(DataSource, null=True, blank=True)
 
     def Clean(self):
         RawImportOb.objects.filter(imp=self).delete()
@@ -339,17 +375,14 @@ class RawImportOb(Ob):
 
 
 class Labresource(Category):
-
-    resourcename = models.CharField(max_length=1024)
-    resourcetype = models.CharField(max_length=256)
-    resourcesequence = models.TextField()
-    resourceseqlength = models.IntegerField()
-    resourcedate = models.DateField()
-    resourcedescription = models.TextField()
+    typ = models.CharField(max_length=256)
+    sequence = models.TextField()
+    seqlength = models.IntegerField()
+    date = models.DateField()
     supplier = models.CharField(max_length=1024)
 
     def GetName(self):
-        return self.resourcename
+        return self.name
 
 
 class Tissue(Category):
@@ -364,21 +397,31 @@ class BioSample(Category):
     count = models.IntegerField(default=1)
 
 
+class Treatment(Category):
+    no = models.IntegerField(default=0)
+
+
+class SampleMethod(Category):
+    pass
+
+
+class Instrument(Category):
+    pass
+
+
 class BioSequence(Category):
-    sequencename = models.CharField(max_length=1024)
-    sequencetype = models.CharField(max_length=256)
-    seqstring = models.TextField()
-    sequencedescription = models.TextField()
-    sequencetopology = models.CharField(max_length=32)
-    seqlength = models.IntegerField()
-    sequenceurl = models.CharField(max_length=2048)
-    seqcomment = models.CharField(max_length=2048)
+    typ = models.CharField(max_length=256)
+    string = models.TextField()
+    topology = models.CharField(max_length=32)
+    length = models.IntegerField()
+    url = models.CharField(max_length=2048)
+    comment = models.CharField(max_length=2048)
     gi = models.IntegerField()
     fnindex_accession = models.CharField(max_length=2048)
     fnindex_id = models.CharField(max_length=2048)
 
     def GetName(self):
-        return self.sequencename
+        return self.name
 
 
 class FormInputLookupOb(models.Model):
@@ -407,62 +450,18 @@ class FormInputLookupFact(models.Model):
 def set_ontology(sender, instance, **kwargs):
     class_name = instance.__class__.__name__
     try:
-        instance.isOb()
+        instance.IsOntology()
     except Exception:
         return
+
     try:
         obt = Ontology.objects.get(classname=class_name)
-        instance.Ontology = obt
-        if not(instance.xreflsid):
-            instance.xreflsid = class_name + "." + instance.name
+        instance.ontology = obt
+        instance.xreflsid = class_name + "." + instance.GetName()
+        instance.obkeywords = class_name + " " + instance.GetName()
 
     except ObjectDoesNotExist:
         msg = "ERROR in signal set_ontology. Uknown class: %s." % class_name
         Logger.Warning(msg)
         raise DataError(msg)
 
-
-@receiver(pre_save)
-def set_category(sender, instance, **kwargs):
-    class_name = instance.__class__.__name__
-    try:
-        instance.IsCategory()
-    except Exception:
-        return
-    try:
-        obt = Ontology.objects.get(classname=class_name)
-        instance.Ontology = obt
-        if not(instance.xreflsid):
-            instance.xreflsid = class_name + "." + instance.name
-
-    except ObjectDoesNotExist:
-        msg = "ERROR in signal set_category. Uknown class: %s." % class_name
-        Logger.Warning(msg)
-        raise DataError(msg)
-
-
-@receiver(pre_save)
-def set_xreflsid_ob(sender, instance, **kwargs):
-    class_name = instance.__class__.__name__
-    try:
-        instance.isOb()
-    except Exception:
-        Logger.Warning("OB: No IsOb function in " + class_name)
-        return
-
-    if not(instance.xreflsid):
-        instance.xreflsid = class_name + "." + instance.GetName()
-
-
-@receiver(pre_save)
-def set_xreflsid_category(sender, instance, **kwargs):
-    class_name = instance.__class__.__name__
-    try:
-        instance.IsCategory()
-    except Exception:
-        Logger.Warning("ONTO: No IsOnto function in " + class_name)
-        return
-
-    if not(instance.xreflsid):
-        n = instance.GetName()
-        instance.xreflsid = class_name + "." + n

@@ -61,6 +61,7 @@ def collect_data_to_file(row, tgt):
 class DataProvider:
     fmt = 'csv'
     max_rows = 200000000
+    collect_op = collect_data
 
     @staticmethod
     def ManipulateData(conn, op):

@@ -8,30 +8,99 @@ from django.db.models.base import *
 from .logger import *
 from .django_ext import *
 from .models_base import *
+import json
 
 
-class Trip(Category):
-    user = models.CharField(max_length=10)
-    method = models.CharField(max_length=255)
+class Trip(Ob):
+    orig_trip_id = models.IntegerField()
+    user = models.CharField(max_length=10, null=True, blank=True, default=None)
+    method = models.CharField(max_length=255, null=True, blank=True, default=None)
     trip_no = models.IntegerField()
     species = models.ForeignKey(Species)
-    vessel = models.CharField(max_length=255)
-    registration = models.IntegerField()
-    country = CountryField()
-    captain = models.CharField(max_length=100)
-    first_sailing = models.DateField()
-    last_arrival = models.DateField()
-    deleted = models.CharField(max_length=1)
+    vessel = models.CharField(max_length=255, null=True, blank=True, default=None)
+    registration = models.IntegerField(null=True, blank=True, default=None)
+    country = CountryField(null=True, blank=True, default=None)
+    captain = models.CharField(max_length=100, null=True, blank=True, default=None)
+    first_sailing = models.DateTimeField(blank=True, null=True, default=None)
+    last_arrival = models.DateTimeField(blank=True, null=True, default=None)
+    deleted = models.CharField(max_length=1, null=True, blank=True, default='N')
+
+    @staticmethod
+    def GetByOrigId(oid):
+        try:
+            return Trip.objects.get(orig_trip_id=oid)
+        except Exception:
+            return None
+
+    def __unicode__(self):
+        return self.name
+
+
+class City(Category):
+    orig_city_id = models.IntegerField()
+
+    @staticmethod
+    def GetByOrigId(oid):
+        try:
+            return City.objects.get(orig_city_id=oid)
+        except Exception:
+            return None
+
+    def __unicode__(self):
+        return self.name
 
 
 class Crew(Category):
-    crew_name = models.CharField(max_length=100)
+    deleted_flag = models.BooleanField(default=False)
+
+
+class Tow(Ob):
+    deleted_flag = models.BooleanField(default=False)
+    city = models.ForeignKey(City)
+    trip = models.ForeignKey(Trip)
+    sample_count = models.IntegerField()
+    treatments = models.ManyToManyField(Treatment)
+    sampler = models.CharField(max_length=10)
+    sample_method = models.ForeignKey(SampleMethod)
+    sample_location = models.CharField(max_length=255)
+    ph_instrument = models.CharField(max_length=255, null=True, default=None)
+    instruments = models.ManyToManyField(Instrument)
+    external_assessment_only = models.CharField(max_length=20, null=True, default=None)
+    no_comment = models.CharField(max_length=255, null=True, default=None)
+    comment = models.TextField(null=True, default=None)
+    date_on_deck = models.DateTimeField(null=True, default=None)
 
 
 class FishOb(Ob):
-    val = None
+    daughters = ["FishObKV"]
     form_completed = models.BooleanField()
     trip = models.ForeignKey(Trip)
+    city = models.ForeignKey(City)
+
+    def __unicode__(self):
+        return str(self.name)
+
+    def GetName(self):
+        return self.study.name + '.' + self.trip.name + '.' + str(self.name)
+
+    def SaveKV(self, key, value):
+        if key:
+            kv = FishObKV()
+            kv.datasource = self.datasource
+            kv.parent = self
+            kv.key = key
+            kv.value = value
+            kv.save()
+            return kv
+        else:
+            return None
+
+    def SaveKVs(self, lst):
+        print((str(self)))
+        for key, value in list(lst.items()):
+            self.SaveKV(key, value)
+        return True
+
     #Townr
     #Sample Number
     #Species
@@ -247,7 +316,9 @@ class FishOb(Ob):
     #Right Fillet Twitch Intensity
     #Right Fillet Iridescence
 
-
     class Meta(Ob.Meta):
         pass
 
+
+class FishObKV(ObKV):
+    parent = models.ForeignKey(FishOb)

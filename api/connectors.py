@@ -183,11 +183,13 @@ class CsvConnector(DataConnector):
     reader = None
     f = None
     gzipped = False
+    delimiter = ','
 
-    def __init__(self, fn, gzipped=False):
+    def __init__(self, fn, delimiter=',', gzipped=False):
         Logger.Message("CsvConnector: Loading " + fn)
         self.origin_name = fn
         self.gzipped = gzipped
+        self.delimiter = delimiter
         self.load()
 
     def __iter__(self):
@@ -198,7 +200,7 @@ class CsvConnector(DataConnector):
             self.f = gzip.open(self.origin_name)
         else:
             self.f = open(self.origin_name, 'rb')
-        self.reader = csv.DictReader(self.f)
+        self.reader = csv.DictReader(self.f, delimiter=self.delimiter)
         self.header = self.reader.fieldnames
 
     def __next__(self):
