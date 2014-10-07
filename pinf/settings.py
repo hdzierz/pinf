@@ -39,6 +39,7 @@ INSTALLED_APPS = (
     'django_extensions',
     'django_tables2',
     'django_tables2_reports',
+    'crispy_forms',
     #'compressor',
     'south',
     'async',
@@ -55,6 +56,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_tables2_reports.middleware.TableReportMiddleware',
 )
+
+CRISPY_TEMPLATE_PACK = 'uni_form'
 
 ROOT_URLCONF = 'pinf.urls'
 
