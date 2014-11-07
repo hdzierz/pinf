@@ -1,4 +1,4 @@
-Django==1.6.5
+# Django==1.6.5
 FirePython==0.9.0
 Jinja2==2.7.3
 MarkupSafe==0.23
@@ -9,7 +9,7 @@ amqp==1.4.5
 anyjson==0.3.3
 backports.ssl-match-hostname==3.4.0.2
 billiard==3.3.0.18
-biopython==1.64
+# biopython==1.64
 celery==3.1.12
 django-appconf==0.6
 django-async==0.5.4

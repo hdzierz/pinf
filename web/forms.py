@@ -15,6 +15,10 @@ RPT_CHOICES = (
     )
 
 
+class FilterForm(forms.Form):
+    search = forms.CharField(label='Filter', max_length=100)
+
+
 class ReportBaseForm(forms.Form):
 
     fmt = forms.ChoiceField(choices=FMT_CHOICES)

@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-import datetime
 from .models import *
 from .logger import *
-from .connectors import *
+#from .connectors import *
 
 
 def is_float(s):

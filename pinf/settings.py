@@ -39,6 +39,8 @@ INSTALLED_APPS = (
     'django_extensions',
     'django_tables2',
     'django_tables2_reports',
+    'crispy_forms',
+    'djorm_pgfulltext',
     #'compressor',
     'south',
     'async',
@@ -55,6 +57,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_tables2_reports.middleware.TableReportMiddleware',
 )
+
+CRISPY_TEMPLATE_PACK = 'uni_form'
 
 ROOT_URLCONF = 'pinf.urls'
 
@@ -73,7 +77,14 @@ DATABASES = {
         'PASSWORD': 'inkl67z',
         'HOST': '10.1.4.15',
     },
-
+    'kiwi_marker': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'kiwi_marker',
+        'USER': 'kiwi',
+        'PORT': '3306',
+        'PASSWORD': 'inkl67z',
+        'HOST': 'localhost',
+    },
     'test': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),

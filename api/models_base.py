@@ -213,7 +213,7 @@ class Ob(models.Model):
     search_index = VectorField()
     objects = SearchManager(
         fields=('obkeywords'),
-        auto_update_search_field=False
+        auto_update_search_field=True
     )
 
     def IsOntology(self):

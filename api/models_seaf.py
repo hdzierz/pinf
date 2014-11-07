@@ -8,7 +8,6 @@ from django.db.models.base import *
 from .logger import *
 from .django_ext import *
 from .models_base import *
-import json
 
 
 class Trip(Ob):

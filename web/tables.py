@@ -48,7 +48,9 @@ class TowTable(CategoryTable):
         model = Tow
 
 
-
+class PrimerObTable(ObTable):
+    class Meta(CategoryTable.Meta):
+        model = PrimerOb
 
 
 
