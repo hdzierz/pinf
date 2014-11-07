@@ -156,9 +156,24 @@ class PagedFilteredTableView(SingleTableView):
         context = super(PagedFilteredTableView, self).get_context_data()
         context[self.context_filter_name] = self.filter
         return context
+<<<<<<< HEAD
 
 
 from crispy_forms.helper import FormHelper
+=======
+
+
+from crispy_forms.helper import FormHelper
+
+
+class FishObTableView(PagedFilteredTableView):
+    model = FishOb
+    table_class = FishObTable
+    template_name = 'page_test.html'
+    paginate_by = 50
+    filter_class = FishObFilter
+    formhelper_class = FormHelper
+>>>>>>> 8e3c934414cd4685ee33567a70b87c060ca9aea5
 
 class FishObTableView(PagedFilteredTableView):
     model = FishOb
