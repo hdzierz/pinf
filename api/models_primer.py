@@ -61,7 +61,6 @@ class MarkerOb(Ob):
             return None
 
     def SaveKVs(self, lst):
-        print((str(self)))
         for key, value in list(lst.items()):
             self.SaveKV(key, value)
         return True

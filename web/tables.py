@@ -12,6 +12,12 @@ class ObTable(TableReport):
         attrs = {"class": "paleblue"}
 
 
+class SpeciesTable(TableReport):
+    class Meta:
+        attrs = {"class": "paleblue"}
+
+
+
 class CategoryTable(TableReport):
     class Meta:
         attrs = {"class": "paleblue"}
@@ -21,8 +27,8 @@ class FishObTable(ObTable):
     data = tables.Column(empty_values=())
 
     def render_data(self, record):
-        rds = record.fishobkv_set.filter(key='Right Bruising F')
-        return rds[0].value
+        rds = record.fishobkv_set.filter(key='Left Fillet Colour Even')
+        return str(rds)
 
     class Meta(ObTable.Meta):
         model = FishOb

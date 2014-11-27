@@ -9,10 +9,20 @@ FMT_CHOICES = (('json', 'json',),
     ('csv', 'csv',),
     ('html', 'html',))
 
-RPT_CHOICES = (
-    ('ibdgenotypeextract', 'ibd_genotype_extract',),
-    ('ibdgenotypevariance1', 'ibd_genotype_variance',),
+
+REPORT_CHOICES = (
+    ('datasource', 'datasource',),
+    ('fishob', 'fishob',),
+    ('city', 'city',),
+    ('crew', 'crew',),
+    ('trip', 'trip',),
+    ('tow', 'tow',),
+    #('species', 'species', ),
     )
+
+
+class ReportSelectForm(forms.Form):
+    report = forms.ChoiceField(choices=REPORT_CHOICES)
 
 
 class FilterForm(forms.Form):

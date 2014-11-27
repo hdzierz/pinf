@@ -52,6 +52,10 @@ class City(Category):
 class Crew(Category):
     deleted_flag = models.BooleanField(default=False)
 
+    def __unicode__(self):
+        return self.name
+
+
 
 class Tow(Ob):
     deleted_flag = models.BooleanField(default=False)

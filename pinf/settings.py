@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     'django_extensions',
     'django_tables2',
     'django_tables2_reports',
@@ -45,6 +46,7 @@ INSTALLED_APPS = (
     'south',
     'async',
     'api',
+    'nosql',
     'web',
 )
 
@@ -85,11 +87,21 @@ DATABASES = {
         'PASSWORD': 'inkl67z',
         'HOST': 'localhost',
     },
+    'mongodb' : {
+      'ENGINE' : 'django_mongodb_engine',
+      'NAME' : 'pinf',
+      'HOST': '10.1.8.167',
+      'PORT': '27018',
+   },
     'test': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
+
+
+DATABASE_ROUTERS = ['nosql.router.KVRouter',]
+DATABASE_APPS_MAPPING = {'api':'default', 'nosql':'mongodb',}
 
 
 TEMPLATE_CONTEXT_PROCESSORS = (

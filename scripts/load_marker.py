@@ -14,6 +14,16 @@ class ImportMarkers:
     @staticmethod
     def LoadMarkerObsOp(line, succ):
         print(str(line))
+	mob = MarkerOb()
+	mob.study = ImportMarkers.study
+	mob.datasource = ImportMarkers.ds
+	mob.ebrida_id = line["EBRIDA_ID"]	
+	mob.kea_id = line["KEA_ID"]
+	mob.sex = line["Sex"]
+	mob.save()
+
+        mob.SaveKV("data", line)
+
         return True
 
     @staticmethod

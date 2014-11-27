@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django_tables2_reports.config import RequestConfigReport as RequestConfig
 #from django_tables2_reports.utils import create_report_http_response
-from django.http import QueryDict, HttpResponse
+from django.http import QueryDict, HttpResponse, HttpResponseRedirect
 from api.connectors import *
 from api.reports import *
 from .forms import *
@@ -18,6 +18,7 @@ SEAFOOD_TABLES = {
     'city': CityTable,
     'crew': CrewTable,
     'tow': TowTable,
+    'species': SpeciesTable,
     'primerob': PrimerObTable,
     'default': CityTable,
     }
@@ -30,6 +31,7 @@ SEAFOOD_OBJECTS = {
     'city': City,
     'crew': Crew,
     'tow': Tow,
+    'species': Species,
     'primerob': PrimerOb,
     'default': City,
     }
@@ -131,6 +133,26 @@ def page_download(request, report, fmt='csv', conf=None):
         return response
 
 
+def page_report_select(request):
+    # if this is a POST request we need to process the form data
+    if request.method == 'POST':
+        # create a form instance and populate it with data from the request:
+        form = ReportSelectForm(request.POST)
+        # check whether it's valid:
+        if form.is_valid():
+            # process the data in form.cleaned_data as required
+            # ...
+            # redirect to a new URL:
+            report = form.cleaned_data['report']
+            return HttpResponseRedirect('/report/' + report  + '/')
+
+    # if a GET (or any other method) we'll create a blank form
+    else:
+        form = ReportSelectForm()
+
+    return render(request, 'page_report_select.html', {'form': form}) 
+
+
 from django_tables2 import SingleTableView
 from web.filters import *
 
@@ -156,24 +178,9 @@ class PagedFilteredTableView(SingleTableView):
         context = super(PagedFilteredTableView, self).get_context_data()
         context[self.context_filter_name] = self.filter
         return context
-<<<<<<< HEAD
-
-
-from crispy_forms.helper import FormHelper
-=======
-
 
 from crispy_forms.helper import FormHelper
 
-
-class FishObTableView(PagedFilteredTableView):
-    model = FishOb
-    table_class = FishObTable
-    template_name = 'page_test.html'
-    paginate_by = 50
-    filter_class = FishObFilter
-    formhelper_class = FormHelper
->>>>>>> 8e3c934414cd4685ee33567a70b87c060ca9aea5
 
 class FishObTableView(PagedFilteredTableView):
     model = FishOb

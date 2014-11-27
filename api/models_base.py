@@ -115,6 +115,9 @@ def InitOntology(obj):
 class Species(Category):
     common_name = models.CharField(max_length=255)
 
+    def __unicode__(self):
+        return self.name
+
 
 class StudyGroup(Category):
     species = models.ForeignKey(Species)
@@ -235,6 +238,7 @@ class ObKV(models.Model):
     datasource = models.ForeignKey(DataSource)
     key = models.CharField(max_length=255)
     value = JSONField()
+    tag = models.CharField(max_length=255, default='na')
 
     def __unicode__(self):
         return self.key + ":" + str(self.value)
