@@ -5,6 +5,7 @@ from django.db import models
 #from django.dispatch import receiver
 #from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.base import *
+from djangotoolbox.fields import DictField, EmbeddedModelField
 
 from .logger import *
 from .django_ext import *
@@ -41,33 +42,14 @@ class MarkerOb(Ob):
     ebrida_id = models.CharField(max_length=255, db_index=True)
     genotype_id = models.IntegerField(default=0, null=True, blank=True)
     sex = models.CharField(max_length=10, null=True, blank=True)
+    values = JSONField() 
 
     def __unicode__(self):
-        return str(self.name)
+        return str(self.kea_id)
 
     def GetName(self):
         return self.study.name + '.' + str(self.kea_id) + "." + self.ebrida_id
 
-    def SaveKV(self, key, value):
-        if key:
-            kv = MarkerObKV()
-            kv.datasource = self.datasource
-            kv.parent = self
-            kv.key = key
-            kv.value = value
-            kv.save()
-            return kv
-        else:
-            return None
-
-    def SaveKVs(self, lst):
-        for key, value in list(lst.items()):
-            self.SaveKV(key, value)
-        return True
-    
-
-class MarkerObKV(ObKV):
-    parent = models.ForeignKey(MarkerOb)
 
 
 # SIGNALS

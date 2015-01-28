@@ -2,6 +2,7 @@ from django.db import models
 #from django.db.models.signals import pre_save
 #from django.dispatch import receiver
 #from django.core.exceptions import ObjectDoesNotExist
+from djangotoolbox.fields import DictField, EmbeddedModelField
 from django_countries.fields import CountryField
 from django.db.models.base import *
 
@@ -75,10 +76,10 @@ class Tow(Ob):
 
 
 class FishOb(Ob):
-    daughters = ["FishObKV"]
     form_completed = models.BooleanField()
     trip = models.ForeignKey(Trip)
     city = models.ForeignKey(City)
+    values = JSONField() 
 
     def __unicode__(self):
         return str(self.name)
@@ -88,21 +89,13 @@ class FishOb(Ob):
 
     def SaveKV(self, key, value):
         if key:
-            kv = FishObKV()
-            kv.datasource = self.datasource
-            kv.parent = self
-            kv.key = key
-            kv.value = value
-            kv.save()
-            return kv
-        else:
-            return None
+            if not type(self.values) == 'dict':
+                self.values = {}
+            self.values[key] = value
 
     def SaveKVs(self, lst):
-        print((str(self)))
         for key, value in list(lst.items()):
             self.SaveKV(key, value)
-        return True
 
     #Townr
     #Sample Number
@@ -322,6 +315,3 @@ class FishOb(Ob):
     class Meta(Ob.Meta):
         pass
 
-
-class FishObKV(ObKV):
-    parent = models.ForeignKey(FishOb)

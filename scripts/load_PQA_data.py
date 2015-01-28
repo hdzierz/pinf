@@ -122,9 +122,8 @@ class ImportFish(ImportOp):
         fob.study = ImportFish.study
         fob.form_completed = line['Form Completed Flag']
         fob.city = city
+        SaveKVs(fob, line)
         fob.save()
-
-        fob.SaveKVs(line)
 
         ImportFish.ob_ct += 1
 
@@ -165,7 +164,6 @@ class ImportFish(ImportOp):
 
     @staticmethod
     def CleanOp():
-        FishObKV.objects.filter(datasource=ImportFish.ds).delete()
         FishOb.objects.filter(datasource=ImportFish.ds).delete()
         Trip.objects.filter(datasource=ImportFish.ds).delete()
 

@@ -25,7 +25,7 @@ class ImportPrimers:
         print(str(line))
         f_primer = PrimerType.objects.get(name='F_primer')
         r_primer = PrimerType.objects.get(name='R_primer')
-	primer_id = line['primer_id']
+    	primer_id = line['primer_id']
 
         pob = PrimerOb()
 

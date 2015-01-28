@@ -10,6 +10,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -36,7 +37,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.sites',
+    #'django.contrib.sites',
     'django_extensions',
     'django_tables2',
     'django_tables2_reports',
@@ -46,8 +47,10 @@ INSTALLED_APPS = (
     'south',
     'async',
     'api',
-    'nosql',
+    #'nosql',
     'web',
+    'inplaceeditform',
+
 )
 
 MIDDLEWARE_CLASSES = (
@@ -59,6 +62,8 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_tables2_reports.middleware.TableReportMiddleware',
 )
+
+EXCEL_SUPPORT = 'xlwt'
 
 CRISPY_TEMPLATE_PACK = 'uni_form'
 
@@ -100,8 +105,13 @@ DATABASES = {
 }
 
 
-DATABASE_ROUTERS = ['nosql.router.KVRouter',]
-DATABASE_APPS_MAPPING = {'api':'default', 'nosql':'mongodb',}
+SOUTH_MIGRATION_MODULES = {
+    'nosql': 'ignore',
+}
+
+MONGODB_MANAGED_APPS = ['nosql',]
+#MONGODB_MANAGED_MODELS = ['ObKV1',]
+DATABASE_ROUTERS = ['django_mongodb_engine.router.MongoDBRouter',]
 
 
 TEMPLATE_CONTEXT_PROCESSORS = (

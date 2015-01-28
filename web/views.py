@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from django_tables2_reports.config import RequestConfigReport as RequestConfig
 #from django_tables2_reports.utils import create_report_http_response
 from django.http import QueryDict, HttpResponse, HttpResponseRedirect
@@ -20,19 +21,21 @@ SEAFOOD_TABLES = {
     'tow': TowTable,
     'species': SpeciesTable,
     'primerob': PrimerObTable,
+    'markerob': MarkerObTable,
     'default': CityTable,
     }
 
 
 SEAFOOD_OBJECTS = {
     'fishob': FishOb,
-    'fishobkv': FishObKV,
+    #'fishobkv': FishObKV,
     'trip': Trip,
     'city': City,
     'crew': Crew,
     'tow': Tow,
     'species': Species,
     'primerob': PrimerOb,
+    'markerob': MarkerOb,
     'default': City,
     }
 
@@ -56,18 +59,70 @@ def get_mime_type(ext):
     return 'Content-type: application/octet-stream', True
 
 
-def get_table(request, report, config={}):
+from django.forms.models import model_to_dict
+def expand_values(request, obs):
+	from django.forms.models import model_to_dict
+	res = []
+	for ob in obs:
+		buff =  model_to_dict(ob)
+		r = {}
+		for b in buff:
+			if b=='values':
+				for v in buff[b]:
+				   r[v] = (buff[b][v])
+			else:
+				r[b] = buff[b]
+
+		res.append(r)
+	return res
+
+
+def get_table1(request, report, config={}):
     try:
         rpt = SEAFOOD_TABLES[report]
         cls = SEAFOOD_OBJECTS[report]
+
         if config['sterm']:
-            return rpt(cls.objects.filter(obkeywords__contains=config['sterm']))
+            obs = cls.objects.filter(obkeywords__contains=config['sterm'])
+            return rpt(obs)
         else:
-            return rpt(cls.objects.all())
+            obs = cls.objects.all()
+            return rpt(obs)
     except:
         rpt = SEAFOOD_TABLES['default']
         cls = SEAFOOD_OBJECTS['default']
         return rpt(cls.objects.all())
+
+
+def get_table(request, report, config={}):
+    rpt = SEAFOOD_TABLES[report]
+    cls = SEAFOOD_OBJECTS[report]
+
+    if config['sterm']:
+        obs = cls.objects.filter(obkeywords__contains=config['sterm'])
+    elif request.GET.get('sterm'):
+        obs = cls.objects.filter(obkeywords__contains=request.GET.get('sterm'))
+    else:
+        obs = cls.objects.all()
+
+    fields = []
+    values = []
+
+    try:
+        fields = []
+        values = []
+        if(hasattr(obs[0], 'values')):
+            vs = obs[0].values
+            for k in vs:
+                fields.append(k)
+                values.append(vs[k])
+    except:
+        pass
+
+    tab = rpt(obs, template = 'table_base.html')
+    tab.fields = fields
+    tab.values = values
+    return tab
 
 
 def get_queryset(request, report, config=None):
@@ -86,16 +141,16 @@ def get_queryset(request, report, config=None):
 
 #@login_required()
 def page_report(request, report):
-    cfg = {'sterm': None}
+    cfg = {'sterm': ''}
     if request.method == 'POST':
         flt = FilterForm(request.POST)
-        if flt.is_valid():
+        if flt.is_valid() and 'filter' in request.POST:
             cfg['sterm'] = flt.cleaned_data['search']
         else:
-            cfg['sterm'] = None
+            cfg['sterm'] = '' 
     else:
         flt = FilterForm()
-        cfg['sterm'] = None
+        cfg['sterm'] = ''
 
     tab = get_table(request, report, cfg)
 
@@ -107,7 +162,7 @@ def page_report(request, report):
     return render(
         request,
         "page_report.html",
-        {"tab": tab, 'report': report, 'flt': flt}
+        {"tab": tab, 'report': report, 'flt': flt, 'sterm': cfg['sterm']}
         )
 
 
@@ -133,6 +188,11 @@ def page_download(request, report, fmt='csv', conf=None):
         return response
 
 
+def page_columns_select(request):
+    
+    return render(request, 'page_column_select.html')
+
+
 def page_report_select(request):
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
@@ -151,6 +211,15 @@ def page_report_select(request):
         form = ReportSelectForm()
 
     return render(request, 'page_report_select.html', {'form': form}) 
+
+
+from django.contrib.auth.models import User
+
+@login_required()
+def page_test(request):
+    user = User.objects.all()[0] 
+
+    return render(request, 'page_test.html', {'user': user})
 
 
 from django_tables2 import SingleTableView

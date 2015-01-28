@@ -53,6 +53,10 @@ def collect_data(row, tgt):
     return tgt
 
 
+def collect_data_with_json(row, tgt):
+	vals = row['data']
+
+
 def collect_data_to_file(row, tgt):
     f.write(','.join(list(row.values())) + "\n")
     return f

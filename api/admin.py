@@ -13,6 +13,10 @@ admin.site.register(Tow)
 admin.site.register(City)
 admin.site.register(Crew)
 admin.site.register(FishOb)
-admin.site.register(FishObKV)
+#admin.site.register(FishObKV)
 
+admin.site.register(PrimerType)
+admin.site.register(PrimerTail)
+admin.site.register(PrimerOb)
+admin.site.register(MarkerOb)
 

@@ -8,8 +8,13 @@ from api.models import *
 
 
 class ObTable(TableReport):
+    fields = []
+    values = []
+    sterm = '' 
+
     class Meta:
         attrs = {"class": "paleblue"}
+        exclude = ("obkeywords", "search_index", "values", )
 
 
 class SpeciesTable(TableReport):
@@ -17,18 +22,14 @@ class SpeciesTable(TableReport):
         attrs = {"class": "paleblue"}
 
 
-
 class CategoryTable(TableReport):
+    sterm = None
     class Meta:
         attrs = {"class": "paleblue"}
+        exclude = ("obkeywords", "search_index",  )
 
 
 class FishObTable(ObTable):
-    data = tables.Column(empty_values=())
-
-    def render_data(self, record):
-        rds = record.fishobkv_set.filter(key='Left Fillet Colour Even')
-        return str(rds)
 
     class Meta(ObTable.Meta):
         model = FishOb
@@ -55,10 +56,13 @@ class TowTable(CategoryTable):
 
 
 class PrimerObTable(ObTable):
-    class Meta(CategoryTable.Meta):
+    class Meta(ObTable.Meta):
         model = PrimerOb
 
 
+class MarkerObTable(ObTable):
+    class Meta(ObTable.Meta):
+        model = MarkerOb
 
 
 

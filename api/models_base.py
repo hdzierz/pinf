@@ -72,7 +72,7 @@ class Category(models.Model):
     search_index = VectorField()
     objects = SearchManager(
         fields=('name', 'alias', 'description', 'obkeywords'),
-        auto_update_search_field=False
+        auto_update_search_field=True
     )
 
     def InitOntology(self):
@@ -216,7 +216,7 @@ class Ob(models.Model):
     search_index = VectorField()
     objects = SearchManager(
         fields=('obkeywords'),
-        auto_update_search_field=True
+        auto_update_search_field=False
     )
 
     def IsOntology(self):
@@ -247,54 +247,33 @@ class ObKV(models.Model):
         abstract = True
 
 
-def SaveKV(ob, cls, key, value):
-    kv = eval(ob.daughters[0])
-    enc = json.JSONEncoder()
-    #kv = cls()
-    kv.parent = ob
-    kv.key = key
-    kv.value = enc.encode(value)
-    kv.save()
-    return kv
+def SaveKV(ob, key, value, save=False):
+    if not hasattr(ob, 'values'):
+        return None
+
+    if key:
+        if not type(ob.values) is dict:
+            ob.values = {}
+        ob.values[key] = value
+        if save:
+            ob.save()
 
 
-def SaveKVs(ob, cls, lst):
+def SaveKVs(ob, lst, save=False):
     for key, value in list(lst.items()):
-        SaveKV(ob, cls, key, value)
-    return True
+        SaveKV(ob, key, value)
+    if save:
+        ob.save()
 
 
-def GetKV(ob, cls, key):
-    try:
-        dec = json.JSONDecoder()
-        kv = cls.objects.get(
-            parent=ob,
-            key=key
-            )
-        if(kv):
-            return dec.decode(kv.value)
-        else:
-            return None
-    except:
+
+def GetKV(ob, key):
+    if not hasattr(ob, 'values'):
         return None
+    if key and type(ob.values) is dict:
+        return ob.values[key]
 
-
-def decode(item):
-    dec = json.JSONDecoder()
-    item['value'] = dec.decode(item['value'])
-
-
-def GetKVs(ob, cls):
-    try:
-        kvs = list(cls.objects.filter(
-            parent=ob
-            ).values())
-        if(kvs):
-            return for_each(kvs, decode)
-        else:
-            return None
-    except:
-        return None
+    return None
 
 
 class Gene(Category):
