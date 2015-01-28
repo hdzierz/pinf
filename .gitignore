@@ -54,3 +54,14 @@ coverage.xml
 # Sphinx documentation
 docs/_build/
 
+# mongodb files
+
+*.0
+*.1
+*.ns
+*.lock
+
+# vim swap files
+
+*.swp
+
