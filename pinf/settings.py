@@ -24,6 +24,8 @@ SECRET_KEY = 'd1$!$=ed))z5#11!wz01c)*bpvh$1%a&(t2q0_13g8i4k!ru!v'
 DEBUG = True
 
 TEMPLATE_DEBUG = True
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+INTERNAL_IPS = '10.1.4.52, 127.0.0.1'
 
 ALLOWED_HOSTS = []
 
@@ -37,6 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'debug_toolbar',
     #'django.contrib.sites',
     'django_extensions',
     'django_tables2',
@@ -44,7 +47,7 @@ INSTALLED_APPS = (
     'crispy_forms',
     'djorm_pgfulltext',
     #'compressor',
-    'south',
+    #'south',
     'async',
     'api',
     #'nosql',
@@ -61,6 +64,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_tables2_reports.middleware.TableReportMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 EXCEL_SUPPORT = 'xlwt'
@@ -80,9 +84,9 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'pinf',
         'USER': 'pinf',
-        'PORT': '5432',
+        'PORT': '5433',
         'PASSWORD': 'inkl67z',
-        'HOST': '10.1.4.15',
+        'HOST': '10.1.8.167',
     },
     'kiwi_marker': {
         'ENGINE': 'django.db.backends.mysql',
@@ -92,12 +96,12 @@ DATABASES = {
         'PASSWORD': 'inkl67z',
         'HOST': 'localhost',
     },
-    'mongodb' : {
-      'ENGINE' : 'django_mongodb_engine',
-      'NAME' : 'pinf',
-      'HOST': '10.1.8.167',
-      'PORT': '27018',
-   },
+#    'mongodb' : {
+#      'ENGINE' : 'django_mongodb_engine',
+#      'NAME' : 'pinf',
+#      'HOST': '10.1.8.167',
+#      'PORT': '27018',
+#   },
     'test': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
@@ -105,13 +109,13 @@ DATABASES = {
 }
 
 
-SOUTH_MIGRATION_MODULES = {
-    'nosql': 'ignore',
-}
+#SOUTH_MIGRATION_MODULES = {
+#    'nosql': 'ignore',
+#}
 
-MONGODB_MANAGED_APPS = ['nosql',]
+#MONGODB_MANAGED_APPS = ['nosql',]
 #MONGODB_MANAGED_MODELS = ['ObKV1',]
-DATABASE_ROUTERS = ['django_mongodb_engine.router.MongoDBRouter',]
+#DATABASE_ROUTERS = ['django_mongodb_engine.router.MongoDBRouter',]
 
 
 TEMPLATE_CONTEXT_PROCESSORS = (

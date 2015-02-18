@@ -148,9 +148,20 @@ def page_report(request, report):
             cfg['sterm'] = flt.cleaned_data['search']
         else:
             cfg['sterm'] = '' 
+
+        sel = ColumnSelectForm(request.POST) 
+        if sel.is_valid():
+            columns = sel.cleaned_data['cols']
+        else:
+            columns = 'None'
+    
     else:
         flt = FilterForm()
         cfg['sterm'] = ''
+        columns = 'None'
+
+        sel = ColumnSelectForm()
+
 
     tab = get_table(request, report, cfg)
 
@@ -158,11 +169,15 @@ def page_report(request, report):
         if(col == 'id'):
             tab.base_columns[col].visible = False
 
+    fob = FishOb.objects.get(name=1)
+    cols = fob.values.keys()
+
+
     RequestConfig(request, paginate={"per_page": 50}).configure(tab)
     return render(
         request,
         "page_report.html",
-        {"tab": tab, 'report': report, 'flt': flt, 'sterm': cfg['sterm']}
+        {"tab": tab, 'report': report, 'flt': flt, 'sel': sel, 'sterm': cfg['sterm'], 'cols': cols, 'debug': columns}
         )
 
 

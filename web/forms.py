@@ -1,4 +1,5 @@
 from django import forms
+from django_pfr.widgets import JQSelect
 
 # api includes
 from api.models import *
@@ -27,6 +28,11 @@ class ReportSelectForm(forms.Form):
 
 class FilterForm(forms.Form):
     search = forms.CharField(label='Filter', max_length=100)
+
+
+class ColumnSelectForm(forms.Form):
+    cols = forms.CharField(widget=forms.HiddenInput())
+    sel = forms.ChoiceField(widget=JQSelect(), choices=REPORT_CHOICES)
 
 
 class ReportBaseForm(forms.Form):
