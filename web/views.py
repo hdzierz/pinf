@@ -98,6 +98,11 @@ def get_table(request, report, config={}):
     rpt = SEAFOOD_TABLES[report]
     cls = SEAFOOD_OBJECTS[report]
 
+    try:
+        columns = config['cols']
+    except:
+        columns = 'all'
+
     if config['sterm']:
         obs = cls.objects.filter(obkeywords__contains=config['sterm'])
     elif request.GET.get('sterm'):
@@ -114,8 +119,9 @@ def get_table(request, report, config={}):
         if(hasattr(obs[0], 'values')):
             vs = obs[0].values
             for k in vs:
-                fields.append(k)
-                values.append(vs[k])
+                if k in columns or columns == 'all':
+                    fields.append(k)
+                    values.append(vs[k])
     except:
         pass
 
@@ -142,6 +148,8 @@ def get_queryset(request, report, config=None):
 #@login_required()
 def page_report(request, report):
     cfg = {'sterm': ''}
+    cols = FishOb.objects.get(name='1').GetColumns()
+
     if request.method == 'POST':
         flt = FilterForm(request.POST)
         if flt.is_valid() and 'filter' in request.POST:
@@ -149,19 +157,20 @@ def page_report(request, report):
         else:
             cfg['sterm'] = '' 
 
-        sel = ColumnSelectForm(request.POST) 
+        sel = ColumnSelectForm(request.POST, cols) 
         if sel.is_valid():
             columns = sel.cleaned_data['cols']
         else:
-            columns = 'None'
+            columns = 'all'
     
     else:
         flt = FilterForm()
         cfg['sterm'] = ''
-        columns = 'None'
+        columns = 'all'
 
-        sel = ColumnSelectForm()
+        sel = ColumnSelectForm(cols)
 
+    cfg['cols'] = columns 
 
     tab = get_table(request, report, cfg)
 

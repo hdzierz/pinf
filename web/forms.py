@@ -21,6 +21,12 @@ REPORT_CHOICES = (
     #('species', 'species', ),
     )
 
+COLUMN_REPORT_CHOICE = ()
+
+def get_columns(ob):
+    cols = ob.GetColumn()
+    
+
 
 class ReportSelectForm(forms.Form):
     report = forms.ChoiceField(choices=REPORT_CHOICES)
@@ -31,8 +37,8 @@ class FilterForm(forms.Form):
 
 
 class ColumnSelectForm(forms.Form):
-    cols = forms.CharField(widget=forms.HiddenInput())
-    sel = forms.ChoiceField(widget=JQSelect(), choices=REPORT_CHOICES)
+    cols = forms.CharField(widget=forms.HiddenInput(), required=False)
+    sel = forms.ChoiceField(widget=JQSelect(), choices=cols, required=False)
 
 
 class ReportBaseForm(forms.Form):

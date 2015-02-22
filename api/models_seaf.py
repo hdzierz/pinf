@@ -113,6 +113,12 @@ class FishOb(Ob):
         for key, value in list(lst.items()):
             self.SaveKV(key, value)
 
+    def GetColumns(self):
+        try:
+            return list(self.values.keys())
+        except:
+            return ()
+
     #Townr
     #Sample Number
     #Species
