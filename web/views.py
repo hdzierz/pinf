@@ -10,11 +10,15 @@ from .forms import *
 
 
 from api.models import *
+from seafood.models import *
+from genotype.models import *
 from .tables import *
+from seafood.views import *
 
 
 SEAFOOD_TABLES = {
     'fishob': FishObTable,
+    'postharvestsurvivalob': PostHarvestSurvivalObTable,
     'trip': TripTable,
     'city': CityTable,
     'crew': CrewTable,
@@ -28,6 +32,7 @@ SEAFOOD_TABLES = {
 
 SEAFOOD_OBJECTS = {
     'fishob': FishOb,
+    'postharvestsurvivalob': PostHarvestSurvivalOb,
     #'fishobkv': FishObKV,
     'trip': Trip,
     'city': City,
@@ -114,8 +119,6 @@ def get_table(request, report, config={}):
     values = []
 
     try:
-        fields = []
-        values = []
         if(hasattr(obs[0], 'values')):
             vs = obs[0].values
             for k in vs:
@@ -124,6 +127,7 @@ def get_table(request, report, config={}):
                     values.append(vs[k])
     except:
         pass
+
 
     tab = rpt(obs, template = 'table_base.html')
     tab.fields = fields
@@ -139,7 +143,6 @@ def get_queryset(request, report, config=None):
         return cls.objects.search(term)
     elif('keyw' in config):
         term = config['keyw']
-        print term;
         return cls.objects.filter(obkeywords__contains=term)
     else:
         return cls.objects.all()
@@ -190,26 +193,18 @@ def page_report(request, report):
         )
 
 
-def page_download(request, report, fmt='csv', conf=None):
-    qd = QueryDict(conf)
-    conf = qd.dict()
 
-    objs = get_queryset(request, report, conf)
-    if not objs:
-        return HttpResponse('No Data')
-
-    conn = DjangoQuerySetConnector(objs)
-    data = DataProvider.GetData(conn, fmt)
-    if data:
-        c_type, download = get_mime_type(fmt)
-        fn = report + "." + fmt
-        response = HttpResponse(data, content_type=c_type)
-        if(download):
-            response['Content-Disposition'] = 'attachment; filename="' + fn + '"'
-        return response
+def page_api(request, db, report, conf=None):
+    if not conf:
+        conf = {'fmt': 'csv'}
     else:
-        response = HttpResponse('Report does not exist')
-        return response
+        conf = QueryDict(conf).dict()
+
+    if 'fmt' not in conf:
+        return HttpResponse('Please specify format e.g. fmt=csv')
+
+    if(db == 'seafood'):
+        return page_seafood(request, report, conf['fmt'], conf=None)
 
 
 def page_columns_select(request):

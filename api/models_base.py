@@ -27,7 +27,19 @@ class Ontology(models.Model):
     tablename = models.CharField(max_length=128)
     owner = models.CharField(max_length=128, null=True, default='core')
     description = models.CharField(max_length=2048, null=True, default='')
-    classname = models.CharField(max_length=128)
+    classname = models.CharField(max_length=128, null=True, blank=True)
+    is_entity = models.BooleanField(default=True)
+    group = models.CharField(max_length=255, null=True, blank=True, default='None')
+
+    def __unicode__(self):
+        return self.name
+
+
+class Term(models.Model):
+    ontology = models.ForeignKey(Ontology)
+    name = models.CharField(max_length=2048)
+    description = models.CharField(max_length=2048, null=True, default='')
+    group = models.CharField(max_length=255, null=True, blank=True, default='None')
 
     def __unicode__(self):
         return self.name

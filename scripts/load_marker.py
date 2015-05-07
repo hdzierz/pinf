@@ -4,6 +4,7 @@
 import datetime
 from api.connectors import *
 from api.imports import *
+from genotype.models import *
 from api.models import *
 
 
@@ -13,7 +14,6 @@ class ImportMarkers:
 
     @staticmethod
     def LoadMarkerObsOp(line, succ):
-        print(str(line))
     	mob = MarkerOb()
     	mob.study = ImportMarkers.study
     	mob.datasource = ImportMarkers.ds

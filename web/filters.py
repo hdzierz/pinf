@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import django_filters
-from api.models import FishOb
+from seafood.models import FishOb
 
 
 class FishObFilter(django_filters.FilterSet):

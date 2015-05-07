@@ -218,23 +218,83 @@ class DictListConnector(DataConnector):
         del self.lst
 
 
+import json
+
 class DjangoModelConnector(DictListConnector):
+    def make_foreign_fields(self, qs, fields):
+        res = []
+        for field in fields:
+            if('_id' not in field):
+                f = qs.model._meta.get_field(field)
+                if(hasattr(f, 'db_constraint')):
+                    res.append(field + '__name')
+                else:
+                    res.append(field)
+        return res
 
     def __init__(self, cls, qry, fields=None):
+        qs = cls.objects.filter(qry)
         if(fields):
-            self.lst = list(cls.objects.filter(qry).values(*fields))
+            fields = self.make_foreign_fields(qs, *fields)
+            self.lst = list(qs.values(*fields))
         else:
-            self.lst = list(cls.objects.filter(qry).values())
+            fields = qs.model._meta.get_all_field_names()
+            fields = self.make_foreign_fields(qs, fields) 
+            self.lst = list(qs.values())
+
+        test = list(self.lst[0].keys())
+
+        if 'values' in test:
+            res = []
+            for s in self.lst:
+                a_values = json.loads(s['values'])
+                s.pop("values", None)
+                res.append(dict(s.items() + a_values.items()))
+
+            self.lst = res
+
         self.header = list(self.lst[0].keys())
         self.current = iter(self.lst)
 
+from collections import OrderedDict
 
 class DjangoQuerySetConnector(DictListConnector):
+    def make_foreign_fields(self, qs, fields):
+        res = []
+        for field in fields:
+            if('_id' not in field):
+                f = qs.model._meta.get_field(field)
+                if(hasattr(f, 'db_constraint')):
+                    res.append(field + '__name')
+                else:
+                    res.append(field)
+        return res
 
     def __init__(self, qs, fields=None):
         if(fields):
+            fields = self.make_foreign_fields(qs, fields)
             self.lst = list(qs.values(*fields))
         else:
-            self.lst = list(qs.values())
+            fields = qs.model._meta.get_all_field_names()
+            fields = self.make_foreign_fields(qs, fields)
+            self.lst = list(qs.values(*fields))
+
+        test = list(self.lst[0].keys())
+        if 'values' in test:
+            res = []
+            for s in self.lst:
+                a_values = json.loads(s['values'])
+                s.pop("values", None)
+                
+                b = OrderedDict()
+                for r in s:
+                    b[r] = s[r]
+                for a in a_values:
+                    b[a] = a_values[a]
+
+                res.append(b)
+
+            self.lst = res
+
         self.header = list(self.lst[0].keys())
         self.current = iter(self.lst)

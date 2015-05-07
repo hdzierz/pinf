@@ -2,9 +2,8 @@
 from __future__ import unicode_literals
 
 from django.db import models, migrations
-import jsonfield.fields
 import djorm_pgfulltext.fields
-import django_countries.fields
+import jsonfield.fields
 
 
 class Migration(migrations.Migration):
@@ -140,50 +139,6 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='City',
-            fields=[
-                ('name', models.CharField(default=b'unknown', max_length=255)),
-                ('alias', models.CharField(default=b'unknown', max_length=255)),
-                ('description', models.TextField(default=b'')),
-                ('obid', models.AutoField(serialize=False, primary_key=True)),
-                ('xreflsid', models.CharField(max_length=255)),
-                ('createddate', models.DateTimeField(auto_now_add=True)),
-                ('createdby', models.CharField(max_length=255)),
-                ('lastupdateddate', models.DateTimeField(auto_now=True)),
-                ('lastupdatedby', models.CharField(max_length=50)),
-                ('obkeywords', models.TextField()),
-                ('statuscode', models.IntegerField(default=1)),
-                ('search_index', djorm_pgfulltext.fields.VectorField(default=b'', serialize=False, null=True, editable=False, db_index=True)),
-                ('orig_city_id', models.IntegerField()),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='Crew',
-            fields=[
-                ('name', models.CharField(default=b'unknown', max_length=255)),
-                ('alias', models.CharField(default=b'unknown', max_length=255)),
-                ('description', models.TextField(default=b'')),
-                ('obid', models.AutoField(serialize=False, primary_key=True)),
-                ('xreflsid', models.CharField(max_length=255)),
-                ('createddate', models.DateTimeField(auto_now_add=True)),
-                ('createdby', models.CharField(max_length=255)),
-                ('lastupdateddate', models.DateTimeField(auto_now=True)),
-                ('lastupdatedby', models.CharField(max_length=50)),
-                ('obkeywords', models.TextField()),
-                ('statuscode', models.IntegerField(default=1)),
-                ('search_index', djorm_pgfulltext.fields.VectorField(default=b'', serialize=False, null=True, editable=False, db_index=True)),
-                ('deleted_flag', models.BooleanField(default=False)),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
             name='DataSource',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
@@ -247,31 +202,6 @@ class Migration(migrations.Migration):
                 ('week', models.IntegerField(null=True)),
                 ('biosample', models.ForeignKey(to='api.BioSample')),
                 ('biosubject', models.ForeignKey(blank=True, to='api.BioSubject', null=True)),
-                ('datasource', models.ForeignKey(to='api.DataSource', null=True)),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='FishOb',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=255)),
-                ('xreflsid', models.CharField(max_length=2048)),
-                ('createddate', models.DateField(auto_now_add=True)),
-                ('createdby', models.CharField(max_length=255)),
-                ('lastupdateddate', models.DateField(auto_now=True)),
-                ('lastupdatedby', models.CharField(max_length=50)),
-                ('obkeywords', models.TextField()),
-                ('statuscode', models.IntegerField(default=1)),
-                ('group', models.CharField(default=b'NA', max_length=1024)),
-                ('recordeddate', models.DateField(auto_now_add=True)),
-                ('search_index', djorm_pgfulltext.fields.VectorField(default=b'', serialize=False, null=True, editable=False, db_index=True)),
-                ('form_completed', models.BooleanField()),
-                ('values', jsonfield.fields.JSONField()),
-                ('city', models.ForeignKey(to='api.City')),
                 ('datasource', models.ForeignKey(to='api.DataSource', null=True)),
             ],
             options={
@@ -421,7 +351,7 @@ class Migration(migrations.Migration):
                 ('ebrida_id', models.CharField(max_length=255, db_index=True)),
                 ('genotype_id', models.IntegerField(default=0, null=True, blank=True)),
                 ('sex', models.CharField(max_length=10, null=True, blank=True)),
-                ('values', jsonfield.fields.JSONField()),
+                ('values', jsonfield.fields.JSONField(default=dict)),
                 ('datasource', models.ForeignKey(to='api.DataSource', null=True)),
             ],
             options={
@@ -948,42 +878,6 @@ class Migration(migrations.Migration):
             bases=(models.Model,),
         ),
         migrations.CreateModel(
-            name='Tow',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=255)),
-                ('xreflsid', models.CharField(max_length=2048)),
-                ('createddate', models.DateField(auto_now_add=True)),
-                ('createdby', models.CharField(max_length=255)),
-                ('lastupdateddate', models.DateField(auto_now=True)),
-                ('lastupdatedby', models.CharField(max_length=50)),
-                ('obkeywords', models.TextField()),
-                ('statuscode', models.IntegerField(default=1)),
-                ('group', models.CharField(default=b'NA', max_length=1024)),
-                ('recordeddate', models.DateField(auto_now_add=True)),
-                ('search_index', djorm_pgfulltext.fields.VectorField(default=b'', serialize=False, null=True, editable=False, db_index=True)),
-                ('deleted_flag', models.BooleanField(default=False)),
-                ('sample_count', models.IntegerField()),
-                ('sampler', models.CharField(max_length=10)),
-                ('sample_location', models.CharField(max_length=255)),
-                ('ph_instrument', models.CharField(default=None, max_length=255, null=True)),
-                ('external_assessment_only', models.CharField(default=None, max_length=20, null=True)),
-                ('no_comment', models.CharField(default=None, max_length=255, null=True)),
-                ('comment', models.TextField(default=None, null=True)),
-                ('date_on_deck', models.DateTimeField(default=None, null=True)),
-                ('city', models.ForeignKey(to='api.City')),
-                ('datasource', models.ForeignKey(to='api.DataSource', null=True)),
-                ('instruments', models.ManyToManyField(to='api.Instrument')),
-                ('ontology', models.ForeignKey(default=1, to='api.Ontology')),
-                ('sample_method', models.ForeignKey(to='api.SampleMethod')),
-                ('study', models.ForeignKey(to='api.Study', null=True)),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
             name='Treatment',
             fields=[
                 ('name', models.CharField(default=b'unknown', max_length=255)),
@@ -1001,42 +895,6 @@ class Migration(migrations.Migration):
                 ('no', models.IntegerField(default=0)),
                 ('datasource', models.ForeignKey(default=1, to='api.DataSource')),
                 ('ontology', models.ForeignKey(default=1, to='api.Ontology')),
-            ],
-            options={
-                'abstract': False,
-            },
-            bases=(models.Model,),
-        ),
-        migrations.CreateModel(
-            name='Trip',
-            fields=[
-                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('name', models.CharField(max_length=255)),
-                ('xreflsid', models.CharField(max_length=2048)),
-                ('createddate', models.DateField(auto_now_add=True)),
-                ('createdby', models.CharField(max_length=255)),
-                ('lastupdateddate', models.DateField(auto_now=True)),
-                ('lastupdatedby', models.CharField(max_length=50)),
-                ('obkeywords', models.TextField()),
-                ('statuscode', models.IntegerField(default=1)),
-                ('group', models.CharField(default=b'NA', max_length=1024)),
-                ('recordeddate', models.DateField(auto_now_add=True)),
-                ('search_index', djorm_pgfulltext.fields.VectorField(default=b'', serialize=False, null=True, editable=False, db_index=True)),
-                ('orig_trip_id', models.IntegerField()),
-                ('user', models.CharField(default=None, max_length=10, null=True, blank=True)),
-                ('method', models.CharField(default=None, max_length=255, null=True, blank=True)),
-                ('trip_no', models.IntegerField()),
-                ('vessel', models.CharField(default=None, max_length=255, null=True, blank=True)),
-                ('registration', models.IntegerField(default=None, null=True, blank=True)),
-                ('country', django_countries.fields.CountryField(default=None, max_length=2, null=True, blank=True, choices=[('AF', 'Afghanistan'), ('AL', 'Albania'), ('DZ', 'Algeria'), ('AS', 'American Samoa'), ('AD', 'Andorra'), ('AO', 'Angola'), ('AI', 'Anguilla'), ('AQ', 'Antarctica'), ('AG', 'Antigua and Barbuda'), ('AR', 'Argentina'), ('AM', 'Armenia'), ('AW', 'Aruba'), ('AU', 'Australia'), ('AT', 'Austria'), ('AZ', 'Azerbaijan'), ('BS', 'Bahamas'), ('BH', 'Bahrain'), ('BD', 'Bangladesh'), ('BB', 'Barbados'), ('BY', 'Belarus'), ('BE', 'Belgium'), ('BZ', 'Belize'), ('BJ', 'Benin'), ('BM', 'Bermuda'), ('BT', 'Bhutan'), ('BO', 'Bolivia, Plurinational State of'), ('BQ', 'Bonaire, Sint Eustatius and Saba'), ('BA', 'Bosnia and Herzegovina'), ('BW', 'Botswana'), ('BV', 'Bouvet Island'), ('BR', 'Brazil'), ('IO', 'British Indian Ocean Territory'), ('BN', 'Brunei Darussalam'), ('BG', 'Bulgaria'), ('BF', 'Burkina Faso'), ('BI', 'Burundi'), ('KH', 'Cambodia'), ('CM', 'Cameroon'), ('CA', 'Canada'), ('CV', 'Cape Verde'), ('KY', 'Cayman Islands'), ('CF', 'Central African Republic'), ('TD', 'Chad'), ('CL', 'Chile'), ('CN', 'China'), ('CX', 'Christmas Island'), ('CC', 'Cocos (Keeling) Islands'), ('CO', 'Colombia'), ('KM', 'Comoros'), ('CG', 'Congo'), ('CD', 'Congo (the Democratic Republic of the)'), ('CK', 'Cook Islands'), ('CR', 'Costa Rica'), ('HR', 'Croatia'), ('CU', 'Cuba'), ('CW', 'Cura\xe7ao'), ('CY', 'Cyprus'), ('CZ', 'Czech Republic'), ('CI', "C\xf4te d'Ivoire"), ('DK', 'Denmark'), ('DJ', 'Djibouti'), ('DM', 'Dominica'), ('DO', 'Dominican Republic'), ('EC', 'Ecuador'), ('EG', 'Egypt'), ('SV', 'El Salvador'), ('GQ', 'Equatorial Guinea'), ('ER', 'Eritrea'), ('EE', 'Estonia'), ('ET', 'Ethiopia'), ('FK', 'Falkland Islands  [Malvinas]'), ('FO', 'Faroe Islands'), ('FJ', 'Fiji'), ('FI', 'Finland'), ('FR', 'France'), ('GF', 'French Guiana'), ('PF', 'French Polynesia'), ('TF', 'French Southern Territories'), ('GA', 'Gabon'), ('GM', 'Gambia (The)'), ('GE', 'Georgia'), ('DE', 'Germany'), ('GH', 'Ghana'), ('GI', 'Gibraltar'), ('GR', 'Greece'), ('GL', 'Greenland'), ('GD', 'Grenada'), ('GP', 'Guadeloupe'), ('GU', 'Guam'), ('GT', 'Guatemala'), ('GG', 'Guernsey'), ('GN', 'Guinea'), ('GW', 'Guinea-Bissau'), ('GY', 'Guyana'), ('HT', 'Haiti'), ('HM', 'Heard Island and McDonald Islands'), ('VA', 'Holy See  [Vatican City State]'), ('HN', 'Honduras'), ('HK', 'Hong Kong'), ('HU', 'Hungary'), ('IS', 'Iceland'), ('IN', 'India'), ('ID', 'Indonesia'), ('IR', 'Iran (the Islamic Republic of)'), ('IQ', 'Iraq'), ('IE', 'Ireland'), ('IM', 'Isle of Man'), ('IL', 'Israel'), ('IT', 'Italy'), ('JM', 'Jamaica'), ('JP', 'Japan'), ('JE', 'Jersey'), ('JO', 'Jordan'), ('KZ', 'Kazakhstan'), ('KE', 'Kenya'), ('KI', 'Kiribati'), ('KP', "Korea (the Democratic People's Republic of)"), ('KR', 'Korea (the Republic of)'), ('KW', 'Kuwait'), ('KG', 'Kyrgyzstan'), ('LA', "Lao People's Democratic Republic"), ('LV', 'Latvia'), ('LB', 'Lebanon'), ('LS', 'Lesotho'), ('LR', 'Liberia'), ('LY', 'Libya'), ('LI', 'Liechtenstein'), ('LT', 'Lithuania'), ('LU', 'Luxembourg'), ('MO', 'Macao'), ('MK', 'Macedonia (the former Yugoslav Republic of)'), ('MG', 'Madagascar'), ('MW', 'Malawi'), ('MY', 'Malaysia'), ('MV', 'Maldives'), ('ML', 'Mali'), ('MT', 'Malta'), ('MH', 'Marshall Islands'), ('MQ', 'Martinique'), ('MR', 'Mauritania'), ('MU', 'Mauritius'), ('YT', 'Mayotte'), ('MX', 'Mexico'), ('FM', 'Micronesia (the Federated States of)'), ('MD', 'Moldova (the Republic of)'), ('MC', 'Monaco'), ('MN', 'Mongolia'), ('ME', 'Montenegro'), ('MS', 'Montserrat'), ('MA', 'Morocco'), ('MZ', 'Mozambique'), ('MM', 'Myanmar'), ('NA', 'Namibia'), ('NR', 'Nauru'), ('NP', 'Nepal'), ('NL', 'Netherlands'), ('NC', 'New Caledonia'), ('NZ', 'New Zealand'), ('NI', 'Nicaragua'), ('NE', 'Niger'), ('NG', 'Nigeria'), ('NU', 'Niue'), ('NF', 'Norfolk Island'), ('MP', 'Northern Mariana Islands'), ('NO', 'Norway'), ('OM', 'Oman'), ('PK', 'Pakistan'), ('PW', 'Palau'), ('PS', 'Palestine, State of'), ('PA', 'Panama'), ('PG', 'Papua New Guinea'), ('PY', 'Paraguay'), ('PE', 'Peru'), ('PH', 'Philippines'), ('PN', 'Pitcairn'), ('PL', 'Poland'), ('PT', 'Portugal'), ('PR', 'Puerto Rico'), ('QA', 'Qatar'), ('RO', 'Romania'), ('RU', 'Russian Federation'), ('RW', 'Rwanda'), ('RE', 'R\xe9union'), ('BL', 'Saint Barth\xe9lemy'), ('SH', 'Saint Helena, Ascension and Tristan da Cunha'), ('KN', 'Saint Kitts and Nevis'), ('LC', 'Saint Lucia'), ('MF', 'Saint Martin (French part)'), ('PM', 'Saint Pierre and Miquelon'), ('VC', 'Saint Vincent and the Grenadines'), ('WS', 'Samoa'), ('SM', 'San Marino'), ('ST', 'Sao Tome and Principe'), ('SA', 'Saudi Arabia'), ('SN', 'Senegal'), ('RS', 'Serbia'), ('SC', 'Seychelles'), ('SL', 'Sierra Leone'), ('SG', 'Singapore'), ('SX', 'Sint Maarten (Dutch part)'), ('SK', 'Slovakia'), ('SI', 'Slovenia'), ('SB', 'Solomon Islands'), ('SO', 'Somalia'), ('ZA', 'South Africa'), ('GS', 'South Georgia and the South Sandwich Islands'), ('SS', 'South Sudan'), ('ES', 'Spain'), ('LK', 'Sri Lanka'), ('SD', 'Sudan'), ('SR', 'Suriname'), ('SJ', 'Svalbard and Jan Mayen'), ('SZ', 'Swaziland'), ('SE', 'Sweden'), ('CH', 'Switzerland'), ('SY', 'Syrian Arab Republic'), ('TW', 'Taiwan (Province of China)'), ('TJ', 'Tajikistan'), ('TZ', 'Tanzania, United Republic of'), ('TH', 'Thailand'), ('TL', 'Timor-Leste'), ('TG', 'Togo'), ('TK', 'Tokelau'), ('TO', 'Tonga'), ('TT', 'Trinidad and Tobago'), ('TN', 'Tunisia'), ('TR', 'Turkey'), ('TM', 'Turkmenistan'), ('TC', 'Turks and Caicos Islands'), ('TV', 'Tuvalu'), ('UG', 'Uganda'), ('UA', 'Ukraine'), ('AE', 'United Arab Emirates'), ('GB', 'United Kingdom'), ('US', 'United States'), ('UM', 'United States Minor Outlying Islands'), ('UY', 'Uruguay'), ('UZ', 'Uzbekistan'), ('VU', 'Vanuatu'), ('VE', 'Venezuela, Bolivarian Republic of'), ('VN', 'Viet Nam'), ('VG', 'Virgin Islands (British)'), ('VI', 'Virgin Islands (U.S.)'), ('WF', 'Wallis and Futuna'), ('EH', 'Western Sahara'), ('YE', 'Yemen'), ('ZM', 'Zambia'), ('ZW', 'Zimbabwe'), ('AX', '\xc5land Islands')])),
-                ('captain', models.CharField(default=None, max_length=100, null=True, blank=True)),
-                ('first_sailing', models.DateTimeField(default=None, null=True, blank=True)),
-                ('last_arrival', models.DateTimeField(default=None, null=True, blank=True)),
-                ('deleted', models.CharField(default=b'N', max_length=1, null=True, blank=True)),
-                ('datasource', models.ForeignKey(to='api.DataSource', null=True)),
-                ('ontology', models.ForeignKey(default=1, to='api.Ontology')),
-                ('species', models.ForeignKey(to='api.Species')),
-                ('study', models.ForeignKey(to='api.Study', null=True)),
             ],
             options={
                 'abstract': False,
@@ -1065,18 +923,6 @@ class Migration(migrations.Migration):
                 'abstract': False,
             },
             bases=(models.Model,),
-        ),
-        migrations.AddField(
-            model_name='tow',
-            name='treatments',
-            field=models.ManyToManyField(to='api.Treatment'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='tow',
-            name='trip',
-            field=models.ForeignKey(to='api.Trip'),
-            preserve_default=True,
         ),
         migrations.AddField(
             model_name='study',
@@ -1271,24 +1117,6 @@ class Migration(migrations.Migration):
             preserve_default=True,
         ),
         migrations.AddField(
-            model_name='fishob',
-            name='ontology',
-            field=models.ForeignKey(default=1, to='api.Ontology'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='fishob',
-            name='study',
-            field=models.ForeignKey(to='api.Study', null=True),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='fishob',
-            name='trip',
-            field=models.ForeignKey(to='api.Trip'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
             model_name='epigeneticsob',
             name='ontology',
             field=models.ForeignKey(default=1, to='api.Ontology'),
@@ -1308,30 +1136,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='diet',
-            name='ontology',
-            field=models.ForeignKey(default=1, to='api.Ontology'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='crew',
-            name='datasource',
-            field=models.ForeignKey(default=1, to='api.DataSource'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='crew',
-            name='ontology',
-            field=models.ForeignKey(default=1, to='api.Ontology'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='city',
-            name='datasource',
-            field=models.ForeignKey(default=1, to='api.DataSource'),
-            preserve_default=True,
-        ),
-        migrations.AddField(
-            model_name='city',
             name='ontology',
             field=models.ForeignKey(default=1, to='api.Ontology'),
             preserve_default=True,

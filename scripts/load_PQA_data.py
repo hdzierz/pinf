@@ -2,7 +2,7 @@
 
 
 from api.connectors import *
-from api.models_seaf import *
+from seafood.models import *
 from api.imports import *
 import time
 import datetime
@@ -61,8 +61,8 @@ class ImportFish(ImportOp):
 
         hdr = Tow()
         hdr.createddate = cd
-        hdr.city = City.GetByOrigId(line['Townr'])
-        hdr.trip = Trip.GetByOrigId(line['Trip'])
+        #hdr.city = City.GetByOrigId(line['Townr'])
+        hdr.trip = Trip.objects.get(name='Trip_' + line['Trip'])
         hdr.sample_count = convert_int(line['Sample Count'])
         hdr.sampler = line['Sampler Name']
         hdr.sample_method = sm
@@ -74,13 +74,13 @@ class ImportFish(ImportOp):
         hdr.datasource = ImportFish.ds
         hdr.save()
 
-        hdr.treatments.add(treatment1)
-        hdr.treatments.add(treatment2)
-        hdr.instruments.add(ph_instrument)
-        hdr.instruments.add(temp_instrument)
-        hdr.instruments.add(twitch_instrument)
-        hdr.instruments.add(torry_instrument)
-        hdr.instruments.add(weight_instrument)
+        #hdr.treatments.add(treatment1)
+        #hdr.treatments.add(treatment2)
+        #hdr.instruments.add(ph_instrument)
+        #hdr.instruments.add(temp_instrument)
+        #hdr.instruments.add(twitch_instrument)
+        #hdr.instruments.add(torry_instrument)
+        #hdr.instruments.add(weight_instrument)
 
     @staticmethod
     def LoadCrewDataOp(line, succ):
@@ -92,7 +92,6 @@ class ImportFish(ImportOp):
 
         crew, created = Crew.objects.get_or_create(
             name=line['Crewname'],
-            deleted_flag=df
             )
 
         crew.createddate = cd
@@ -106,7 +105,7 @@ class ImportFish(ImportOp):
 
         city, created = City.objects.get_or_create(name=line['Townr'], orig_city_id=line['Townr'])
 
-        trip = Trip.objects.get(trip_no=line['Trip'])
+        trip = Trip.objects.get(name='Trip_' + line['Trip'])
 
         bs, created = BioSubject.objects.get_or_create(
             species=sp,
@@ -120,7 +119,6 @@ class ImportFish(ImportOp):
         fob.trip = trip
         fob.datasource = ImportFish.ds
         fob.study = ImportFish.study
-        fob.form_completed = line['Form Completed Flag']
         fob.city = city
         SaveKVs(fob, line)
         fob.save()
@@ -133,10 +131,11 @@ class ImportFish(ImportOp):
     def LoadTripDataOp(line, succ):
         sp, created = Species.objects.get_or_create(name=line['Target Species'])
 
+        vessel, created = Vessel.objects.get_or_create(name=line['Vessel Name'])
+
         trip, created = Trip.objects.get_or_create(
-            trip_no=line['Trip Number'],
-            orig_trip_id=line['Trip Number'],
-            species=sp,
+            name = 'Trip_' + line['Trip Number'],
+            vessel=vessel,
             study=ImportFish.study
             )
         if created:
@@ -145,14 +144,12 @@ class ImportFish(ImportOp):
                 dd = datetime.datetime.now()
             trip.createddate = dd
             trip.datasource = ImportFish.ds
-            trip.name = 'Trip_' + line['Trip Number']
             trip.study = ImportFish.study
             trip.user = line['User']
             trip.orig_trip_id = line['Trip Number']
             trip.method = line['Fishing Method']
             trip.trip_no = line['Trip Number']
             trip.species = sp
-            trip.vessel = line['Vessel Name']
             trip.registration = line['Registration']
             trip.country = 'NZ'
             trip.captain = line['Captain']
@@ -181,6 +178,7 @@ def load_PQA(fn):
     im = GenericImport(conn, ImportFish.study, ImportFish.ds)
     im.load_op = ImportFish.LoadFishDataOp
     im.Load()
+    header = conn.header 
 
 
 def load_trip(fn):

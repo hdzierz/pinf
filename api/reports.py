@@ -49,7 +49,11 @@ def get_csv(result_list):
 
 
 def collect_data(row, tgt):
-    tgt.append(list(row.values()))
+    vals = row.values()
+    res = []
+    for v in vals:
+        res.append(str(v))
+    tgt.append(list(res))
     return tgt
 
 

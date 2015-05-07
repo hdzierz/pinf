@@ -1,6 +1,7 @@
-from api.models_seaf import *
+from seafood.models import *
 
 def run():
+
     FishScore.objects.all().delete()
 
     fs = FishScore()
@@ -216,5 +217,7 @@ def run():
     fs.name = 'Twitch Tail'
     fs.values = { 'minor': 1, 'moderate': 9, 'major': 17 }
     fs.save()
+
+
 
 

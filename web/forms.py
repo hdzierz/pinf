@@ -3,6 +3,8 @@ from django_pfr.widgets import JQSelect
 
 # api includes
 from api.models import *
+from seafood.models import *
+from genotype.models import *
 
 
 FMT_CHOICES = (('json', 'json',),
@@ -38,7 +40,7 @@ class FilterForm(forms.Form):
 
 class ColumnSelectForm(forms.Form):
     cols = forms.CharField(widget=forms.HiddenInput(), required=False)
-    sel = forms.ChoiceField(widget=JQSelect(), choices=cols, required=False)
+    sel = forms.ChoiceField(widget=JQSelect(), choices=REPORT_CHOICES, required=False)
 
 
 class ReportBaseForm(forms.Form):

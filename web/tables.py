@@ -5,6 +5,8 @@
 from django_tables2_reports.tables import TableReport
 import django_tables2 as tables
 from api.models import *
+from seafood.models import *
+from genotype.models import *
 
 
 class ObTable(TableReport):
@@ -33,6 +35,11 @@ class FishObTable(ObTable):
 
     class Meta(ObTable.Meta):
         model = FishOb
+
+
+class PostHarvestSurvivalObTable(ObTable):
+    class Meta(ObTable.Meta):
+        model = PostHarvestSurvivalOb
 
 
 class TripTable(CategoryTable):
