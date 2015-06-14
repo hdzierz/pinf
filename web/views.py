@@ -7,6 +7,7 @@ from api.connectors import *
 from api.reports import *
 from .forms import *
 #from django_tables2 import *
+from jsonview.decorators import json_view
 
 
 from api.models import *
@@ -14,35 +15,8 @@ from seafood.models import *
 from genotype.models import *
 from .tables import *
 from seafood.views import *
+from genotype.views import *
 
-
-SEAFOOD_TABLES = {
-    'fishob': FishObTable,
-    'postharvestsurvivalob': PostHarvestSurvivalObTable,
-    'trip': TripTable,
-    'city': CityTable,
-    'crew': CrewTable,
-    'tow': TowTable,
-    'species': SpeciesTable,
-    'primerob': PrimerObTable,
-    'markerob': MarkerObTable,
-    'default': CityTable,
-    }
-
-
-SEAFOOD_OBJECTS = {
-    'fishob': FishOb,
-    'postharvestsurvivalob': PostHarvestSurvivalOb,
-    #'fishobkv': FishObKV,
-    'trip': Trip,
-    'city': City,
-    'crew': Crew,
-    'tow': Tow,
-    'species': Species,
-    'primerob': PrimerOb,
-    'markerob': MarkerOb,
-    'default': City,
-    }
 
 
 def get_mime_type(ext):
@@ -194,17 +168,18 @@ def page_report(request, report):
 
 
 
-def page_api(request, db, report, conf=None):
-    if not conf:
-        conf = {'fmt': 'csv'}
-    else:
-        conf = QueryDict(conf).dict()
-
-    if 'fmt' not in conf:
-        return HttpResponse('Please specify format e.g. fmt=csv')
+def page_api(request, db, report, fmt='csv'):
+    qry = None
+    print fmt
+    #if not qry:
+    #    qry = {'fmt': 'csv'}
+    #else:
+    #    qry = QueryDict(qry).dict()
 
     if(db == 'seafood'):
-        return page_seafood(request, report, conf['fmt'], conf=None)
+        return page_seafood(request, report, fmt, qry)
+    elif(db == 'genotype'):
+        return page_genotype(request, report, fmt, qry)
 
 
 def page_columns_select(request):
@@ -241,40 +216,10 @@ def page_test(request):
     return render(request, 'page_test.html', {'user': user})
 
 
-from django_tables2 import SingleTableView
-from web.filters import *
+@json_view
+def test_view(request):
+    return {
+        'foo': 'bar',
+    }
 
-
-class PagedFilteredTableView(SingleTableView):
-    filter_class = None
-    formhelper_class = None
-    context_filter_name = 'filter'
-
-    def get_queryset(self, **kwargs):
-        qs = super(PagedFilteredTableView, self).get_queryset()
-        self.filter = self.filter_class(self.request.GET, queryset=qs)
-        self.filter.form.helper = self.formhelper_class()
-        return self.filter.qs
-
-    def get_table(self, **kwargs):
-        table = super(PagedFilteredTableView, self).get_table()
-        RequestConfig(self.request, paginate={'page': self.kwargs['page'],
-                            "per_page": self.paginate_by}).configure(table)
-        return table
-
-    def get_context_data(self, **kwargs):
-        context = super(PagedFilteredTableView, self).get_context_data()
-        context[self.context_filter_name] = self.filter
-        return context
-
-from crispy_forms.helper import FormHelper
-
-
-class FishObTableView(PagedFilteredTableView):
-    model = FishOb
-    table_class = FishObTable
-    template_name = 'page_test.html'
-    paginate_by = 50
-    filter_class = FishObFilter
-    formhelper_class = FormHelper
 

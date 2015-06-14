@@ -75,6 +75,11 @@ class ExcelConnector(DataConnector):
 
         return res
 
+    @staticmethod
+    def GetSheets(fn):
+        workbook = xlrd.open_workbook(fn)
+        return workbook.sheet_names()
+
 
 class SqlConnector(DataConnector):
     cursor = None
@@ -135,12 +140,14 @@ class CsvConnector(DataConnector):
     f = None
     gzipped = False
     delimiter = ','
+    header = None
 
-    def __init__(self, fn, delimiter=',', gzipped=False):
+    def __init__(self, fn, delimiter=',', gzipped=False, header=None):
         Logger.Message("CsvConnector: Loading " + fn)
         self.origin_name = fn
         self.gzipped = gzipped
         self.delimiter = delimiter
+        self.header=header
         self.load()
 
     def __iter__(self):
@@ -151,7 +158,7 @@ class CsvConnector(DataConnector):
             self.f = gzip.open(self.origin_name)
         else:
             self.f = open(self.origin_name, 'rb')
-        self.reader = csv.DictReader(self.f, delimiter=self.delimiter)
+        self.reader = csv.DictReader(self.f, delimiter=self.delimiter, fieldnames=self.header)
         self.header = self.reader.fieldnames
 
     def __next__(self):
@@ -244,11 +251,11 @@ class DjangoModelConnector(DictListConnector):
 
         test = list(self.lst[0].keys())
 
-        if 'values' in test:
+        if 'obs' in test:
             res = []
             for s in self.lst:
-                a_values = json.loads(s['values'])
-                s.pop("values", None)
+                a_values = json.loads(s['obs'])
+                s.pop("obs", None)
                 res.append(dict(s.items() + a_values.items()))
 
             self.lst = res
@@ -280,11 +287,11 @@ class DjangoQuerySetConnector(DictListConnector):
             self.lst = list(qs.values(*fields))
 
         test = list(self.lst[0].keys())
-        if 'values' in test:
+        if 'obs' in test:
             res = []
             for s in self.lst:
-                a_values = json.loads(s['values'])
-                s.pop("values", None)
+                a_values = json.loads(s['obs'])
+                s.pop("obs", None)
                 
                 b = OrderedDict()
                 for r in s:

@@ -39,7 +39,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'debug_toolbar',
+    #'debug_toolbar',
     #'django.contrib.sites',
     'django_extensions',
     'django_tables2',
@@ -48,11 +48,11 @@ INSTALLED_APPS = (
     'crispy_forms',
     'djorm_pgfulltext',
     #'compressor',
-    #'south',
     'async',
     'api',
     'seafood',
     'genotype',
+    'datais',
     #'nosql',
     'web',
     'inplaceeditform',
@@ -67,7 +67,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_tables2_reports.middleware.TableReportMiddleware',
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
+    #'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 EXCEL_SUPPORT = 'xlwt'

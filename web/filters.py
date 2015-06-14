@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import django_filters
-from seafood.models import FishOb
+from seafood.models import Fish
 
 
-class FishObFilter(django_filters.FilterSet):
+class FishFilter(django_filters.FilterSet):
     class Meta:
-        model = FishOb
+        model = Fish
         fields = ['xreflsid']
         order_by = ['xreflsid']

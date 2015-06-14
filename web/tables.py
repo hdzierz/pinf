@@ -31,45 +31,10 @@ class CategoryTable(TableReport):
         exclude = ("obkeywords", "search_index",  )
 
 
-class FishObTable(ObTable):
+class FishTable(ObTable):
 
     class Meta(ObTable.Meta):
-        model = FishOb
-
-
-class PostHarvestSurvivalObTable(ObTable):
-    class Meta(ObTable.Meta):
-        model = PostHarvestSurvivalOb
-
-
-class TripTable(CategoryTable):
-    class Meta(CategoryTable.Meta):
-        model = Trip
-
-
-class CityTable(CategoryTable):
-    class Meta(CategoryTable.Meta):
-        model = City
-
-
-class CrewTable(CategoryTable):
-    class Meta(CategoryTable.Meta):
-        model = Crew
-
-
-class TowTable(CategoryTable):
-    class Meta(CategoryTable.Meta):
-        model = Tow
-
-
-class PrimerObTable(ObTable):
-    class Meta(ObTable.Meta):
-        model = PrimerOb
-
-
-class MarkerObTable(ObTable):
-    class Meta(ObTable.Meta):
-        model = MarkerOb
+        model = Fish
 
 
 
