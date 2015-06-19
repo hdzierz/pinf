@@ -265,6 +265,10 @@ class DjangoModelConnector(DictListConnector):
 
 from collections import OrderedDict
 
+def do_nothing():
+    pass
+
+
 class DjangoQuerySetConnector(DictListConnector):
     def make_foreign_fields(self, qs, fields):
         res = []
@@ -273,11 +277,14 @@ class DjangoQuerySetConnector(DictListConnector):
                 f = qs.model._meta.get_field(field)
                 if(hasattr(f, 'db_constraint')):
                     res.append(field + '__name')
+                elif('Many' in f.__class__.__name__ and  'Rel' in f.__class__.__name__):
+                    do_nothing()
                 else:
                     res.append(field)
         return res
 
     def __init__(self, qs, fields=None):
+        # If fields are selected use only those fields
         if(fields):
             fields = self.make_foreign_fields(qs, fields)
             self.lst = list(qs.values(*fields))
@@ -286,22 +293,36 @@ class DjangoQuerySetConnector(DictListConnector):
             fields = self.make_foreign_fields(qs, fields)
             self.lst = list(qs.values(*fields))
 
-        test = list(self.lst[0].keys())
-        if 'obs' in test:
-            res = []
-            for s in self.lst:
+        print fields
+
+        # Check is objects have an obs field
+        header = []
+        #if 'obs' in test:
+        res = []
+        # Browse through list of records
+        for s in self.lst:
+            b = OrderedDict()
+            # Add sql fields to new list
+            for r in s:
+                if r not in header:
+                    header.append(r)
+                b[r] = s[r]
+            # Add obs fields to new list
+            if 'obs' in s:
+                # Get the json content
                 a_values = json.loads(s['obs'])
+                # Remove the obs field as we don't need that anymore
                 s.pop("obs", None)
-                
-                b = OrderedDict()
-                for r in s:
-                    b[r] = s[r]
+
                 for a in a_values:
+                    if a not in header:
+                        header.append(a)
                     b[a] = a_values[a]
 
-                res.append(b)
+            res.append(b)
 
-            self.lst = res
+        self.lst = res
+            
 
-        self.header = list(self.lst[0].keys())
+        self.header = header
         self.current = iter(self.lst)

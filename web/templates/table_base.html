@@ -4,7 +4,7 @@
 
 {% block interaction %}
     {{ block.super }}
-
+    <a class="odd" href="/gui/marker/create/">create</a> <br /><br />
     {% block table.report %}
         {% if table.is_configured %}
             {% for label, format in table.formats %}

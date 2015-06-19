@@ -1,225 +1,204 @@
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django_tables2_reports.config import RequestConfigReport as RequestConfig
-#from django_tables2_reports.utils import create_report_http_response
-from django.http import QueryDict, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render, redirect
+from .http_data_download_response import *
 from api.connectors import *
 from api.reports import *
-from .forms import *
-#from django_tables2 import *
-from jsonview.decorators import json_view
+from api.serializer import *
+#from rest_framework import generics
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
+from django.http import JsonResponse
 
-from api.models import *
-from seafood.models import *
+# Create your views here.
+
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from genotype.forms import *
+from genotype.tables import *
 from genotype.models import *
-from .tables import *
-from seafood.views import *
-from genotype.views import *
+from genotype.serializer import *
+from seafood.forms import *
+from seafood.tables import *
+from seafood.models import *
+from seafood.serializer import *
+
+from django.core.urlresolvers import reverse_lazy
 
 
+###################################################
+## Helpers
+###################################################
 
-def get_mime_type(ext):
-    if(ext == 'json'):
-        return 'Content-type: application/json', False
-
-    elif(ext == 'xml'):
-        return 'Content-type: application/xml', False
-
-    elif(ext == 'yaml'):
-        return 'Content-type: text/x-yaml', False
-
-    elif(ext == 'csv'):
-        return 'Content-type: text/csv', False
-
-    elif(ext == 'gzip'):
-        return 'Content-type: application/x-gzip', True
-
-    return 'Content-type: application/octet-stream', True
-
-
-from django.forms.models import model_to_dict
-def expand_values(request, obs):
-	from django.forms.models import model_to_dict
-	res = []
-	for ob in obs:
-		buff =  model_to_dict(ob)
-		r = {}
-		for b in buff:
-			if b=='values':
-				for v in buff[b]:
-				   r[v] = (buff[b][v])
-			else:
-				r[b] = buff[b]
-
-		res.append(r)
-	return res
-
-
-def get_table1(request, report, config={}):
-    try:
-        rpt = SEAFOOD_TABLES[report]
-        cls = SEAFOOD_OBJECTS[report]
-
-        if config['sterm']:
-            obs = cls.objects.filter(obkeywords__contains=config['sterm'])
-            return rpt(obs)
+def get_queryset(request, report, term=None):
+    cls = get_model_class(report)
+    if term:
+        if(hasattr(cls, 'obs')):
+            return cls.objects.filter(obs__contains = term)
+        elif(hasattr(cls, 'values')):
+            return cls.objects.filter(values__contains = term)
         else:
-            obs = cls.objects.all()
-            return rpt(obs)
+            return cls.objects.all()
+    else:
+        obs = cls.objects.all()  
+        return obs
+
+
+def to_underline(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+
+def to_camelcase(s):
+    buff = re.sub(r'(?!^)_([a-zA-Z])', lambda m: m.group(1).upper(), s)
+    return buff[0].upper() + buff[1:]
+
+
+def get_model_class(report, target = "model"):
+    buff = report
+    tgt = target[0].upper() + target[1:].lower()
+    if(tgt == 'Model'):
+        tgt = ""
+
+    try:
+        return eval(to_camelcase(buff + tgt))
     except:
-        rpt = SEAFOOD_TABLES['default']
-        cls = SEAFOOD_OBJECTS['default']
-        return rpt(cls.objects.all())
+        return None
+   
 
 
-def get_table(request, report, config={}):
-    rpt = SEAFOOD_TABLES[report]
-    cls = SEAFOOD_OBJECTS[report]
+###################################################
+## Manipulate data via GUI (standard models)
+###################################################
+
+
+def get_table(request, report, ds=None, config={}):
+    cls = get_model_class(report)
+    rpt = get_model_class(report, "Table")
 
     try:
         columns = config['cols']
     except:
         columns = 'all'
 
-    if config['sterm']:
+    if 'sterm' in config:
         obs = cls.objects.filter(obkeywords__contains=config['sterm'])
     elif request.GET.get('sterm'):
         obs = cls.objects.filter(obkeywords__contains=request.GET.get('sterm'))
     else:
         obs = cls.objects.all()
 
-    fields = []
-    values = []
-
-    try:
-        if(hasattr(obs[0], 'values')):
-            vs = obs[0].values
-            for k in vs:
-                if k in columns or columns == 'all':
-                    fields.append(k)
-                    values.append(vs[k])
-    except:
-        pass
-
+    if(ds):
+        obs = obs.filter(datasource=ds)
 
     tab = rpt(obs, template = 'table_base.html')
-    tab.fields = fields
-    tab.values = values
     return tab
 
 
-def get_queryset(request, report, config=None):
-    cls = SEAFOOD_OBJECTS[report]
 
-    if('sterm' in config):
-        term = config['sterm']
-        return cls.objects.search(term)
-    elif('keyw' in config):
-        term = config['keyw']
-        return cls.objects.filter(obkeywords__contains=term)
+def manage_by_gui(request, report, cmd, pk=None):
+    form_cls = get_model_class(report, 'form')
+
+    cls = get_model_class(report)
+    if(pk):
+        obj = cls.objects.get(pk=pk)
     else:
-        return cls.objects.all()
-
-
-#@login_required()
-def page_report(request, report):
-    cfg = {'sterm': ''}
-    cols = FishOb.objects.get(name='1').GetColumns()
+        obj=None
 
     if request.method == 'POST':
-        flt = FilterForm(request.POST)
-        if flt.is_valid() and 'filter' in request.POST:
-            cfg['sterm'] = flt.cleaned_data['search']
-        else:
-            cfg['sterm'] = '' 
+        if cmd == 'update' or cmd == 'create':
+            form = form_cls(request.POST, instance=obj)
+            form.save()
+        elif cmd == 'delete' and obj:
+            obj.delete()
 
-        sel = ColumnSelectForm(request.POST, cols) 
-        if sel.is_valid():
-            columns = sel.cleaned_data['cols']
-        else:
-            columns = 'all'
-    
+        return redirect(reverse_lazy('gui-list', kwargs={'report': report}))
     else:
-        flt = FilterForm()
-        cfg['sterm'] = ''
-        columns = 'all'
-
-        sel = ColumnSelectForm(cols)
-
-    cfg['cols'] = columns 
-
-    tab = get_table(request, report, cfg)
-
-    for col in tab.base_columns:
-        if(col == 'id'):
-            tab.base_columns[col].visible = False
-
-    fob = FishOb.objects.get(name=1)
-    cols = fob.values.keys()
-
-
-    RequestConfig(request, paginate={"per_page": 50}).configure(tab)
-    return render(
-        request,
-        "page_report.html",
-        {"tab": tab, 'report': report, 'flt': flt, 'sel': sel, 'sterm': cfg['sterm'], 'cols': cols, 'debug': columns}
-        )
-
-
-
-def page_api(request, db, report, fmt='csv'):
-    qry = None
-    print fmt
-    #if not qry:
-    #    qry = {'fmt': 'csv'}
-    #else:
-    #    qry = QueryDict(qry).dict()
-
-    if(db == 'seafood'):
-        return page_seafood(request, report, fmt, qry)
-    elif(db == 'genotype'):
-        return page_genotype(request, report, fmt, qry)
-
-
-def page_columns_select(request):
+        form = form_cls(instance=obj)
     
-    return render(request, 'page_column_select.html')
+    return render(request, 'marker_update_form.html', {'form': form, 'report': report, 'cmd': cmd, 'pk': pk})
 
 
-def page_report_select(request):
-    # if this is a POST request we need to process the form data
-    if request.method == 'POST':
-        # create a form instance and populate it with data from the request:
-        form = ReportSelectForm(request.POST)
-        # check whether it's valid:
-        if form.is_valid():
-            # process the data in form.cleaned_data as required
-            # ...
-            # redirect to a new URL:
-            report = form.cleaned_data['report']
-            return HttpResponseRedirect('/report/' + report  + '/')
-
-    # if a GET (or any other method) we'll create a blank form
-    else:
-        form = ReportSelectForm()
-
-    return render(request, 'page_report_select.html', {'form': form}) 
+def gui_listing(request, report, ds=None):
+    table = get_table(request, report, ds)
+    dss = DataSource.objects.filter(ontology__name=to_camelcase(report)).distinct()
+    table.paginate(page=request.GET.get('page', 1), per_page=25)
+    return render(request, 'marker_list.html', {'table': table, 'dss': dss, 'report': report})
 
 
-from django.contrib.auth.models import User
 
-@login_required()
-def page_test(request):
-    user = User.objects.all()[0] 
-
-    return render(request, 'page_test.html', {'user': user})
+###################################################
+## Manipulate data via Rest (standard models)
+###################################################
 
 
-@json_view
-def test_view(request):
-    return {
-        'foo': 'bar',
-    }
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+def restfully_manage_collection(request, report, qry=""):
+    cls = get_model_class(report) 
+    cls_ser = get_model_class(report, "serializer")
+
+    if request.method == 'GET':
+        lst = get_queryset(request, report, qry)
+        serializer = cls_ser(lst, many=True)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        data = request.DATA.dict()
+        dat = []
+        for item in data:
+            dat.append(OrderedDict(item.items()))
+
+        serializer = cls_ser(data=dat, many=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', 'POST', 'PUT', 'DELETE'])
+def restfully_manage_element(request, report, pk):
+    cls = get_model_class(report)
+    cls_ser = get_model_class(report, "serializer")
+
+    try:
+        obj = cls.objects.get(pk=pk)
+    except cls.DoesNotExist:
+        return HttpResponse(status=404)
+
+    if request.method == 'GET':
+        serializer = cls_ser(obj)
+        return Response(serializer.data)
+    elif request.method == 'POST':
+        data = request.DATA
+        serializer = cls_ser(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'PUT':
+        data = request.DATA
+        serializer = cls_ser(obj, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    elif request.method == 'DELETE':
+        obj.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+
+###################################################
+## Get data with different formats for 
+## user defined reports
+###################################################
+
+def page_report(request, report, fmt='csv', conf=None):
+    objs = get_queryset(request, report, conf)
+    if not objs:
+        return HttpResponse('No Data')
+
+    conn = DjangoQuerySetConnector(objs)
+    data = DataProvider.GetData(conn, fmt)
+    return HttpDataDownloadResponse(data, report, fmt, False)
 
 

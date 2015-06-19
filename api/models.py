@@ -39,6 +39,7 @@ class Ontology(models.Model):
 class DataSource(models.Model):
     name = models.CharField(max_length=1024)
     typ = models.CharField(null=True, max_length=256, default="None")
+    ontology = models.ForeignKey(Ontology)
     supplier = models.CharField(null=True, max_length=2048, default="None")
     supplieddate = models.DateField(auto_now_add=True)
     comment = models.TextField(null=True, default="none")

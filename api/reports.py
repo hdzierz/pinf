@@ -49,21 +49,16 @@ def get_csv(result_list):
 
 
 def collect_data(row, tgt):
-    vals = row.values()
+    #vals = row.values()
+    #print(tgt.header)
     res = []
-    for v in vals:
-        res.append(str(v))
+    for h in tgt.header:
+        if h in row:
+            res.append(str(row[h]))
+        else:
+            res.append(None)
     tgt.append(list(res))
     return tgt
-
-
-def collect_data_with_json(row, tgt):
-	vals = row['data']
-
-
-def collect_data_to_file(row, tgt):
-    f.write(','.join(list(row.values())) + "\n")
-    return f
 
 
 class DataProvider:
@@ -78,6 +73,7 @@ class DataProvider:
     @staticmethod
     def GetData(conn, fmt, conf={}):
         data = tablib.Dataset()
+        data.header = conn.header
         data.append(conn.header)
         data = accumulate(conn, collect_data, data)
 
