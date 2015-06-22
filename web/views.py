@@ -25,23 +25,48 @@ from seafood.serializer import *
 
 from django.core.urlresolvers import reverse_lazy
 
+from querystring_parser import parser
+
 
 ###################################################
 ## Helpers
 ###################################################
 
-def get_queryset(request, report, term=None):
+def get_queryset(request, report, conf=None):
+    term = None
+    if('term' in conf):
+        term = conf['term']
+
+    ds = None
+    if('ds' in conf):
+        ds = conf['ds']
+        if(isinstance(ds, dict)):
+            ds = ds.values()
+        else:
+            ds = [ds]
+
     cls = get_model_class(report)
+
+    if not cls:
+        return None
+
+    obs = None
     if term:
         if(hasattr(cls, 'obs')):
-            return cls.objects.filter(obs__contains = term)
+            obs = cls.objects.filter(obs__contains = term)
         elif(hasattr(cls, 'values')):
-            return cls.objects.filter(values__contains = term)
+            obs = cls.objects.filter(values__contains = term)
         else:
-            return cls.objects.all()
-    else:
+            obs = cls.objects.search(term)
+
+    if ds and not obs:
+        obs = cls.objects.filter(datasource_id__in = ds)
+    if ds and obs:
+        obs = obs.filter(datasource_id__in = ds)
+
+    if not obs:
         obs = cls.objects.all()  
-        return obs
+    return obs
 
 
 def to_underline(name):
@@ -63,8 +88,8 @@ def get_model_class(report, target = "model"):
     try:
         return eval(to_camelcase(buff + tgt))
     except:
-        return None
-   
+        msg = "No report for " + report + " Check spelling."
+        raise Exception(msg)
 
 
 ###################################################
@@ -193,7 +218,8 @@ def restfully_manage_element(request, report, pk):
 ###################################################
 
 def page_report(request, report, fmt='csv', conf=None):
-    objs = get_queryset(request, report, conf)
+    get_dict = parser.parse(request.GET.urlencode())
+    objs = get_queryset(request, report, get_dict)
     if not objs:
         return HttpResponse('No Data')
 

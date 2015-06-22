@@ -47,6 +47,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'crispy_forms',
     'djorm_pgfulltext',
+    'django_cassandra_engine',
     #'compressor',
     'async',
     'api',
@@ -54,6 +55,7 @@ INSTALLED_APPS = (
     'genotype',
     'datais',
     #'nosql',
+    'cassy',
     'web',
     'inplaceeditform',
 
@@ -105,10 +107,22 @@ DATABASES = {
 #      'HOST': '10.1.8.167',
 #      'PORT': '27018',
 #   },
-    'test': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    }
+    'cassandra': {
+        'ENGINE': 'django_cassandra_engine',
+        'NAME': 'pinf_nosql',
+#        'TEST_NAME': 'pinf_db',
+        'HOST': '10.1.8.154',
+        'OPTIONS': {
+            'replication': {
+                'strategy_class': 'SimpleStrategy',
+                'replication_factor': 1
+            }
+        }
+    },
+#    'test': {
+#        'ENGINE': 'django.db.backends.sqlite3',
+#        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#    }
 }
 
 

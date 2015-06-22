@@ -26,7 +26,7 @@ class GenericImport:
     header = None
     study = None
 
-    def __init__(self, conn, study, ds):
+    def __init__(self, conn, study=None, ds=None):
         self.study = study
         self.ds = ds
         self.conn = conn

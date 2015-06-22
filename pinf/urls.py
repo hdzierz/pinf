@@ -23,6 +23,7 @@ urlpatterns = patterns('',
     url(r'^api/(?P<report>[0-9a-zA-Z_]*)/(?P<qry>[0-9a-zA-Z_\.]*)$', 'web.views.restfully_manage_collection'),
     url(r'^report/(?P<report>[0-9a-zA-Z_]*)/$', 'web.views.page_report'),
     url(r'^report/(?P<report>[0-9a-zA-Z_]*)/(?P<fmt>[a-z]*)/$', 'web.views.page_report'),
+    url(r'^report/(?P<report>[0-9a-zA-Z_]*)/(?P<fmt>[a-z]*)/(?P<conf>.*)$', 'web.views.page_report'),
 )
 
 if settings.DEBUG and False:
