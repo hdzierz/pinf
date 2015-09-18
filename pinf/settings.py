@@ -87,7 +87,15 @@ WSGI_APPLICATION = 'pinf.wsgi.application'
 # https://docs.djangoproject.com/en/1.6/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+   'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'postgres',
+        'USER': 'postgres',
+        'PORT': '5432',
+        'HOST': 'db',
+    },
+
+    'default1': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'pinf',
         'USER': 'pinf',
