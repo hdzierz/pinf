@@ -12,8 +12,12 @@ from .django_ext import *
 from api.algorithms import *
 
 import datetime
+from django.utils import timezone
 import re
+
+import collections 
 from jsonfield import JSONField
+from djgeojson.fields import PointField
 
 
 # Create your models here.
@@ -39,11 +43,13 @@ class Ontology(models.Model):
 class DataSource(models.Model):
     name = models.CharField(max_length=1024)
     typ = models.CharField(null=True, max_length=256, default="None")
+    source = models.TextField()
     ontology = models.ForeignKey(Ontology)
     supplier = models.CharField(null=True, max_length=2048, default="None")
     supplieddate = models.DateField(auto_now_add=True)
     comment = models.TextField(null=True, default="none")
     is_active = models.BooleanField(default=False)
+    values = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
     search_index = VectorField()
     objects = SearchManager(
         fields=('name', 'typ'),
@@ -62,7 +68,7 @@ class Term(models.Model):
     definition = models.CharField(max_length=2048, null=True, default='')
     group = models.CharField(max_length=255, null=True, blank=True, default='None')
     datasource = models.ForeignKey(DataSource)
-    values = JSONField()
+    values = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
 
     def __unicode__(self):
         return self.name
@@ -71,6 +77,8 @@ class Term(models.Model):
 
 class Feature(models.Model):
     name = models.CharField(max_length=255, default="unknown")
+    dtt = models.DateTimeField(default=timezone.now)
+    geom = PointField(default={'type': 'Point', 'coordinates': [0, 0]})    
     alias = models.CharField(max_length=255, default="unknown")
     datasource = models.ForeignKey(DataSource, default=1)
     description = models.TextField(default="")
@@ -89,17 +97,21 @@ class Feature(models.Model):
         auto_update_search_field=True
     )
 
-    obs = JSONField()
+    obs = JSONField(load_kwargs={'object_pairs_hook': collections.OrderedDict})
 
-    def InitOntology(self):
-        name = self.__class__.__name__
-        tname = 'api_' + name.lower()
+    @classmethod
+    def InitOntology(cls):
+        name = cls.__name__
+        app = cls._meta.app_label
 
-        obt = Ontology()
-        obt.displayname = name
-        obt.classname = name
-        obt.tablename = tname
-        obt.save()
+        tname = app + '_' + name.lower()
+
+        obt = Ontology.objects.get_or_create(
+            name=name,
+            classname=name,
+            tablename=tname,
+            owner=app,
+            group=app)
 
     def GetName(self):
         return self.name
@@ -222,10 +234,6 @@ def GetKV(ob, key):
         return ob.obs[key]
 
     return None
-
-
-class Gene(Feature):
-    pass
 
 
 class Protein(Feature):

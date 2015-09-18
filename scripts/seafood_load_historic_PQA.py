@@ -7,7 +7,7 @@ from api.imports import *
 import time
 import datetime
 from django.utils.timezone import get_current_timezone, make_aware
-
+import os
 
 def convert_date(dt):
     return time.strptime(dt, "%d.%m.%Y")
@@ -48,13 +48,14 @@ class ImportFish(ImportOp):
 
         trip_name = 'Trip_%d' % line['Trip']
         trip, created = Trip.objects.get_or_create(name=trip_name)
+        
+        tow_name = 'Tow_%d' % convert_int(line['Tow Number'])
+        tow, created = Tow.objects.get_or_create(name=tow_name, trip=trip)
 
-        tow, created = Tow.objects.get_or_create(name='Tow_' + str(line['Tow Number']), trip=trip)
-
-        fish_number = line['Fish Number']
+        fish_name = 'Fish_%d' % line['Fish Number']
 
         fob = Fish()
-        fob.name = fish_number
+        fob.name = fish_name
         fob.recordeddate = datetime.datetime.now()
         fob.trip = trip
         fob.tow = tow
@@ -82,9 +83,12 @@ def load_PQA(fn, sheet):
 def init(fn, sheet):
     onto = Ontology.objects.get(name="Fish")
     dt = datetime.datetime.now()
+    path = os.path.dirname(fn)
     ds, created = DataSource.objects.get_or_create(
-        name='Seafood Import Historical Individual Fish Data: ' + sheet + ' / ' + fn,
+        name='Historical Fish Data',
         ontology=onto,
+        typ='XLSX',
+        source=path,
         supplier='Seafood',
     )
 
@@ -100,6 +104,7 @@ def run():
     fn = 'data/seafood/historic_fish_data/individual_fish_data.xlsx'
     sheets = ExcelConnector.GetSheets(fn)
     for sheet in sheets:
+        print("Processing Sheet: " + sheet)
         init(fn, sheet)
         load_PQA(fn, sheet)
 

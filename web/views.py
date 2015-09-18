@@ -8,12 +8,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 
-from django.http import JsonResponse
+#from django.http import JsonResponse
 
 # Create your views here.
 
-from django.shortcuts import render_to_response
-from django.template import RequestContext
+#from django.shortcuts import render_to_response
+#from django.template import RequestContext
 from genotype.forms import *
 from genotype.tables import *
 from genotype.models import *
@@ -22,10 +22,24 @@ from seafood.forms import *
 from seafood.tables import *
 from seafood.models import *
 from seafood.serializer import *
+from seafood.report import *
+from sets import Set
+
+from gene_expression.models import *
+from gene_expression.tables import *
+from gene_expression.forms import *
+from gene_expression.serializer import *
+
 
 from django.core.urlresolvers import reverse_lazy
 
 from querystring_parser import parser
+
+REPORTS = {
+    'fish_datasource': FishDataSourceReport,
+    'fish_by_datasource': FishReport,
+    'fish_term': FishTermReport,
+}
 
 
 ###################################################
@@ -33,6 +47,11 @@ from querystring_parser import parser
 ###################################################
 
 def get_queryset(request, report, conf=None):
+    if report in REPORTS:
+        cls = REPORTS[report]
+        obj = cls()
+        return obj.run(conf)
+
     term = None
     if('term' in conf):
         term = conf['term']
@@ -41,7 +60,7 @@ def get_queryset(request, report, conf=None):
     if('ds' in conf):
         ds = conf['ds']
         if(isinstance(ds, dict)):
-            ds = ds.values()
+            ds = list(ds.values())
         else:
             ds = [ds]
 
@@ -53,19 +72,19 @@ def get_queryset(request, report, conf=None):
     obs = None
     if term:
         if(hasattr(cls, 'obs')):
-            obs = cls.objects.filter(obs__contains = term)
+            obs = cls.objects.filter(obs__contains=term)
         elif(hasattr(cls, 'values')):
-            obs = cls.objects.filter(values__contains = term)
+            obs = cls.objects.filter(values__contains=term)
         else:
             obs = cls.objects.search(term)
 
     if ds and not obs:
-        obs = cls.objects.filter(datasource_id__in = ds)
+        obs = cls.objects.filter(datasource_id__in=ds)
     if ds and obs:
-        obs = obs.filter(datasource_id__in = ds)
+        obs = obs.filter(datasource_id__in=ds)
 
     if not obs:
-        obs = cls.objects.all()  
+        obs = cls.objects.all()
     return obs
 
 
@@ -79,7 +98,7 @@ def to_camelcase(s):
     return buff[0].upper() + buff[1:]
 
 
-def get_model_class(report, target = "model"):
+def get_model_class(report, target="model"):
     buff = report
     tgt = target[0].upper() + target[1:].lower()
     if(tgt == 'Model'):
@@ -116,9 +135,8 @@ def get_table(request, report, ds=None, config={}):
     if(ds):
         obs = obs.filter(datasource=ds)
 
-    tab = rpt(obs, template = 'table_base.html')
+    tab = rpt(obs, template='table_base.html')
     return tab
-
 
 
 def manage_by_gui(request, report, cmd, pk=None):
@@ -128,7 +146,7 @@ def manage_by_gui(request, report, cmd, pk=None):
     if(pk):
         obj = cls.objects.get(pk=pk)
     else:
-        obj=None
+        obj = None
 
     if request.method == 'POST':
         if cmd == 'update' or cmd == 'create':
@@ -140,7 +158,7 @@ def manage_by_gui(request, report, cmd, pk=None):
         return redirect(reverse_lazy('gui-list', kwargs={'report': report}))
     else:
         form = form_cls(instance=obj)
-    
+
     return render(request, 'marker_update_form.html', {'form': form, 'report': report, 'cmd': cmd, 'pk': pk})
 
 
@@ -151,15 +169,13 @@ def gui_listing(request, report, ds=None):
     return render(request, 'marker_list.html', {'table': table, 'dss': dss, 'report': report})
 
 
-
 ###################################################
 ## Manipulate data via Rest (standard models)
 ###################################################
 
-
 @api_view(['GET', 'POST', 'PUT', 'DELETE'])
 def restfully_manage_collection(request, report, qry=""):
-    cls = get_model_class(report) 
+    #cls = get_model_class(report)
     cls_ser = get_model_class(report, "serializer")
 
     if request.method == 'GET':
@@ -170,7 +186,7 @@ def restfully_manage_collection(request, report, qry=""):
         data = request.DATA.dict()
         dat = []
         for item in data:
-            dat.append(OrderedDict(item.items()))
+            dat.append(OrderedDict(list(item.items())))
 
         serializer = cls_ser(data=dat, many=True)
         if serializer.is_valid():
@@ -211,9 +227,8 @@ def restfully_manage_element(request, report, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-
 ###################################################
-## Get data with different formats for 
+## Get data with different formats for
 ## user defined reports
 ###################################################
 
@@ -223,7 +238,20 @@ def page_report(request, report, fmt='csv', conf=None):
     if not objs:
         return HttpResponse('No Data')
 
-    conn = DjangoQuerySetConnector(objs)
+    if(isinstance(objs, list)):
+        conn = DictListConnector(objs, expand_obs=True)
+    else:
+        conn = DjangoQuerySetConnector(objs)
+
+    if report in REPORTS:
+        cls = REPORTS[report]
+        if cls.Meta.fields:
+            conn.header = cls.Meta.fields
+        elif cls.Meta.exclude:
+            conn.header = Set(conn.header) - Set(cls.Meta.exclude)
+        elif cls.Meta.sequence:
+            conn.header = Set(cls.Meta.sequence) | Set(conn.header)
+
     data = DataProvider.GetData(conn, fmt)
     return HttpDataDownloadResponse(data, report, fmt, False)
 

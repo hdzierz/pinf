@@ -10,17 +10,18 @@ class Import(ImportOp):
     ds = None
     @staticmethod
     def ImportOp(line, succ):
-        species, created = Species.objects.get_or_create(name=line['Target Species'])
-        name = 'Trip_%d' % line['Trip Number']
-        term, created = Trip.objects.get_or_create(
-            name=name
-        )
-        term.datasource = Import.ds
-        term.craetedby = line['User']
-        term.lastupdatedby = line['User']
-        #species = line['Target Species']
-        SaveKVs(term, line)
-        term.save()
+        if line['Deleted Flag'] == 'N':
+            species, created = Species.objects.get_or_create(name=line['Target Species'])
+            name = 'Trip_%d' % line['Trip Number']
+            term, created = Trip.objects.get_or_create(
+                name=name
+            )
+            term.datasource = Import.ds
+            term.craetedby = line['User']
+            term.lastupdatedby = line['User']
+            #species = line['Target Species']
+            SaveKVs(term, line)
+            term.save()
 
     @staticmethod
     def CleanOp():

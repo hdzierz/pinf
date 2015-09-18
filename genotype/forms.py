@@ -3,16 +3,7 @@ from django import forms
 from splitjson.widgets import SplitJSONWidget
 from django.forms import ModelForm
 from .models import *
-
-
-class PinfForm(ModelForm):
-    attrs = {'class': 'special', 'size': '40'}
-    obs = forms.CharField(widget=SplitJSONWidget(attrs=attrs, debug=True))
-    title = "Update"
-
-    class Meta:
-        model = Marker
-        fields = ['obs']
+from pinf.utils import PinfForm
 
 
 class MarkerForm(PinfForm):

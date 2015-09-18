@@ -28,29 +28,9 @@ class ReportQDict:
         self.qdict[nam] = q
 
 
-def get_html(result_list):
-    return HTML.table(result_list)
-
-
-def get_csv(result_list):
-    import random
-
-    ran = random.randrange(1, 1000000000, 1)
-
-    fn = "nunz_temp_%.10d" % ran
-
-    with open(fn, 'wb') as f:
-        w = csv.writer(f)
-        w.writerows(result_list)
-        f.close()
-
-    with open(fn, 'rb') as f:
-        return f.readlines()
-
 
 def collect_data(row, tgt):
-    #vals = row.values()
-    #print(tgt.header)
+    #print(row)
     res = []
     for h in tgt.header:
         if h in row:
@@ -76,7 +56,6 @@ class DataProvider:
         data.header = conn.header
         data.append(conn.header)
         data = accumulate(conn, collect_data, data)
-
         res = None
         if(fmt == 'json'):
             res = data.json

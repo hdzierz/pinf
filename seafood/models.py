@@ -35,6 +35,7 @@ class Trip(Feature):
 
 class Staff(Feature):
     status = models.CharField(max_length=255)
+    initials = models.CharField(max_length=20)
 
     def __unicode__(self):
         return self.name

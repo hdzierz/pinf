@@ -1,6 +1,17 @@
 import django_tables2 as tables
+from django import forms
 from django_tables2.utils import A
 from django.utils.html import mark_safe
+from django.forms import ModelForm
+from splitjson.widgets import SplitJSONWidget
+
+class PinfForm(ModelForm):
+    attrs = {'class': 'special', 'size': '40'}
+    obs = forms.CharField(widget=SplitJSONWidget(attrs=attrs, debug=True))
+    title = "Update"
+
+    class Meta:
+        fields = ['obs']
 
 
 class PinfTable(tables.Table):

@@ -10,11 +10,12 @@ class Import(ImportOp):
     ds = None
     @staticmethod
     def ImportOp(line, succ):
-        term, created = Crew.objects.get_or_create(name=line['Crewname'])
-        term.datasource = Import.ds
-        term.lastupdatedby = line['Updated By']
-        SaveKVs(term, line)
-        term.save()
+        if line['Deleted Flag'] == 'N':
+            term, created = Crew.objects.get_or_create(name=line['Crewname'])
+            term.datasource = Import.ds
+            term.lastupdatedby = line['Updated By']
+            SaveKVs(term, line)
+            term.save()
 
     @staticmethod
     def CleanOp():

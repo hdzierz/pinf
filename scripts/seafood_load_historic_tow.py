@@ -4,7 +4,7 @@
 from api.connectors import *
 from seafood.models import *
 from api.imports import *
-from os import walk
+from os import walk, path
 
 
 class Import(ImportOp):
@@ -20,8 +20,14 @@ class Import(ImportOp):
             trip_name = 'Trip_%s' % line['Trip Number']
         trip, created = Trip.objects.get_or_create(name=trip_name)
 
+        if(isinstance(line['Tow Number'], (int, long, float, complex))):
+            tow_name = 'Tow_%d' % line['Tow Number']
+        else:
+            tow_name = 'Tow_%s' % line['Tow Number']
+
+
         ob = Tow()
-        ob.name = str(line['Tow Number']) 
+        ob.name = tow_name
         ob.recordeddate = datetime.datetime.now()
         ob.trip = trip
         ob.datasource = Import.ds
@@ -47,9 +53,12 @@ def load_tows(fn, sheet):
 
 def init(fn, sheet):
     onto = Ontology.objects.get(name="Tow")
+    path = os.path.dirname(fn)
     dt = datetime.datetime.now()
     ds, created = DataSource.objects.get_or_create(
-        name='Seafood Import Historical Tow Data: ' + fn,
+        name='Historical Tow Data',
+        source=path,
+        typ='XLSX',
         ontology=onto,
         supplier='Seafood',
     )
@@ -65,12 +74,6 @@ def init(fn, sheet):
 def run():
 
     path = 'data/seafood/historic_tow_data/'
-
-    #fn = path + 'COR0045_Towdata.xlsx'
-
-    #sheets = ExcelConnector.GetSheets(fn)
-    #init(fn, sheets[0])
-    #load_tows(fn, sheets[0])
 
     for (dirpath, dirname, filenames) in walk(path):
         for fn in filenames:

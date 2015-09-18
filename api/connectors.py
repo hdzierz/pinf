@@ -14,7 +14,7 @@ from .logger import *
 
 class DataConnector:
     name = 'None'
-    #header = None
+    header = None
     head_mapper = None
     current = None
     origin_name = None
@@ -43,7 +43,7 @@ class ExcelConnector(DataConnector):
     max_row = 0
     header = None
 
-    def __init__(self, fn, sheet_name):
+    def __init__(self, fn, sheet_name=None):
         self. fn = fn
         self.sheet_name = sheet_name
         self.load()
@@ -62,7 +62,12 @@ class ExcelConnector(DataConnector):
 
     def load(self):
         workbook = xlrd.open_workbook(self.fn)
-        self.sheet = workbook.sheet_by_name(self.sheet_name)
+        if self.sheet_name:
+            self.sheet = workbook.sheet_by_name(self.sheet_name)
+        else:
+            sheet_names = workbook.sheet_names()
+            self.sheet = workbook.sheet_by_name(sheet_names[0])
+
         self.header = self.get_header()
 
     def get_header(self):
@@ -179,13 +184,63 @@ class CsvConnector(DataConnector):
 
 
 class DictListConnector(DataConnector):
-
+    header = None
     lst = None
 
-    def __init__(self, lst):
+    def __init__(self, lst, expand_obs=False):
         self.lst = lst
-        self.header = list(self.lst[0].keys())
+
+        if expand_obs:
+            self.lst, self.header = self.convert_obs_json()
+        else:
+            self.header = list(self.lst[0].keys())
         self.current = iter(self.lst)
+
+    def make_fields_from_json(self, s, b, header, field):
+        # Add obs fields to new list
+        if field in s:
+            # Get the json content
+            a_values = json.loads(s[field])
+
+            for a in a_values:
+                if a not in header:
+                    header.append(a)
+                b[a] = a_values[a]
+
+        return b
+
+    def convert_obs_json(self):        
+        # Check is objects have an obs field
+        header = []
+        #if 'obs' in test:
+        res = []
+        # Browse through list of records
+        for s in self.lst:
+            b = OrderedDict()
+            # Add sql fields to new list
+            for r in s:
+                if r not in ["obs","obs1","obs2", "values"]:
+                    if r not in header:
+                        header.append(r)
+                    b[r] = s[r]
+
+            # Add obs fields to new list
+            if 'obs' in s:
+                b = self.make_fields_from_json(s, b, header, 'obs')
+
+            if 'values' in s:
+                b = self.make_fields_from_json(s, b, header, 'values')
+
+            if 'obs1' in s:
+                b = self.make_fields_from_json(s, b, header, 'obs1')
+
+            if 'obs2' in s:
+                b = self.make_fields_from_json(s, b, header, 'obs2')
+
+            res.append(b)
+
+        return res, header
+
 
     def load(self):
         pass
@@ -249,19 +304,8 @@ class DjangoModelConnector(DictListConnector):
             fields = self.make_foreign_fields(qs, fields) 
             self.lst = list(qs.values())
 
-        test = list(self.lst[0].keys())
+        self.lst, self.header = self.convert_obs_json()
 
-        if 'obs' in test:
-            res = []
-            for s in self.lst:
-                a_values = json.loads(s['obs'])
-                s.pop("obs", None)
-                res.append(dict(s.items() + a_values.items()))
-
-            self.lst = res
-
-        self.header = list(self.lst[0].keys())
-        self.current = iter(self.lst)
 
 from collections import OrderedDict
 
@@ -293,36 +337,6 @@ class DjangoQuerySetConnector(DictListConnector):
             fields = self.make_foreign_fields(qs, fields)
             self.lst = list(qs.values(*fields))
 
-        print fields
-
-        # Check is objects have an obs field
-        header = []
-        #if 'obs' in test:
-        res = []
-        # Browse through list of records
-        for s in self.lst:
-            b = OrderedDict()
-            # Add sql fields to new list
-            for r in s:
-                if r not in header:
-                    header.append(r)
-                b[r] = s[r]
-            # Add obs fields to new list
-            if 'obs' in s:
-                # Get the json content
-                a_values = json.loads(s['obs'])
-                # Remove the obs field as we don't need that anymore
-                s.pop("obs", None)
-
-                for a in a_values:
-                    if a not in header:
-                        header.append(a)
-                    b[a] = a_values[a]
-
-            res.append(b)
-
-        self.lst = res
-            
-
-        self.header = header
+        self.lst, self.header = self.convert_obs_json()
         self.current = iter(self.lst)
+
